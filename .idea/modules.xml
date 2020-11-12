@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/IRC.iml" filepath="$PROJECT_DIR$/.idea/IRC.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/IRC_torch.iml" filepath="$PROJECT_DIR$/.idea/IRC_torch.iml" />
     </modules>
   </component>
 </project>

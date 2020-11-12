@@ -2,6 +2,7 @@
 import math as _math
 import time as _time
 
+import torch as _torch
 import numpy as _np
 import scipy.sparse as _sp
 
@@ -102,13 +103,19 @@ class MDP(object):
         # P and V can be any object that supports indexing, so it is important
         # that you know they define a valid MDP before calling the
         # _bellmanOperator method. Otherwise the results will be meaningless.
-        Q = _np.empty((self.A, self.S))
+        #Q = _np.empty((self.A, self.S))
+        Q = _torch.empty(self.A, self.S)
         for aa in range(self.A):
-            Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
+            ### Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
+            Q[aa] = self.R[aa] + self.discount * self.P[aa].mm(V)
+
         # Get the policy and value, for now it is being returned but...
         # Which way is better?
         # 1. Return, (policy, value)
-        return (Q.argmax(axis=0), Q.max(axis=0))
+
+        ### return (Q.argmax(axis=0), Q.max(axis=0))
+        return (Q.argmax(dim=0), Q.max(dim=0))
+
         # 2. update self.policy and self.V directly
         # self.V = Q.max(axis=1)
         # self.policy = Q.argmax(axis=1)
@@ -137,7 +144,7 @@ class MDP(object):
         # P and V can be any object that supports indexing, so it is important
         # that you know they define a valid MDP before calling the
         # _bellmanOperator method. Otherwise the results will be meaningless.
-        Q = _np.empty((self.A, self.S))
+        ### Q = _np.empty((self.A, self.S))
         for aa in range(self.A):
             Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
         # Get the policy and value, for now it is being returned but...
