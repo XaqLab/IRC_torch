@@ -6,7 +6,8 @@ import torch as _torch
 import numpy as _np
 import scipy.sparse as _sp
 
-import mdptoolbox.util as _util
+#import mdptoolbox.util as _util
+import utils.util as _util
 
 _MSG_STOP_MAX_ITER = "Iterating stopped due to maximum number of iterations " \
     "condition."
@@ -107,14 +108,14 @@ class MDP(object):
         Q = _torch.empty(self.A, self.S)
         for aa in range(self.A):
             ### Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
-            Q[aa] = self.R[aa] + self.discount * self.P[aa].mm(V)
+            Q[aa] = self.R[aa] + self.discount * self.P[aa].matmul(V)
 
         # Get the policy and value, for now it is being returned but...
         # Which way is better?
         # 1. Return, (policy, value)
 
         ### return (Q.argmax(axis=0), Q.max(axis=0))
-        return (Q.argmax(dim=0), Q.max(dim=0))
+        return (Q.argmax(dim=0), Q.max(dim=0)[0])   #tensor.max returns max value and indices as a tuple
 
         # 2. update self.policy and self.V directly
         # self.V = Q.max(axis=1)
@@ -145,21 +146,36 @@ class MDP(object):
         # that you know they define a valid MDP before calling the
         # _bellmanOperator method. Otherwise the results will be meaningless.
         ### Q = _np.empty((self.A, self.S))
+        Q = _torch.empty(self.A, self.S)
         for aa in range(self.A):
-            Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
+            ### Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
+            Q[aa] = self.R[aa] + self.discount * self.P[aa].matmul(V)
+
         # Get the policy and value, for now it is being returned but...
         # Which way is better?
         # 1. Return, (policy, value)
 
-        expo = _np.zeros(Q.shape)
-        softpolicy = _np.zeros(Q.shape)
-        for i in range(self.S):
-            expo[:, i] = _np.exp(Q[:, i] / temperature)
-            expo[:, i] = expo[:, i] / _np.max(expo[:, i])    # divide all the exp value with the max,
-                                                             # allow the softpolicy approximate the optimal policy closely
-            softpolicy[:, i] = expo[:, i] / _np.sum(expo[:, i])
+        ### expo = _np.zeros(Q.shape)
+        ### softpolicy = _np.zeros(Q.shape)
+        expo = _torch.zeros(Q.shape)
+        softpolicy = _torch.zeros(Q.shape)
 
-        return (softpolicy, _np.sum(Q * softpolicy, axis = 0))
+
+        for i in range(self.S):
+            ###expo[:, i] = _np.exp(Q[:, i] / temperature)
+            ### expo[:, i] = expo[:, i] / _np.max(expo[:, i])    # divide all the exp value with the max,
+            ###                                                  # allow the softpolicy approximate the optimal policy closely
+            ### softpolicy[:, i] = expo[:, i] / _np.sum(expo[:, i])
+
+            expo[:, i] = _torch.exp(Q[:, i] / temperature)     # IN TORCH, THE TEMPERATURE CANNOT BE TOO SMALL
+            expo[:, i] = expo[:, i] / _torch.max(expo[:, i])  # divide all the exp value with the max,
+            # allow the softpolicy approximate the optimal policy closely
+            softpolicy[:, i] = expo[:, i] / _torch.sum(expo[:, i])
+
+
+        ###return (softpolicy, _np.sum(Q * softpolicy, axis = 0))
+        return (softpolicy, _torch.sum(Q * softpolicy, axis=0))
+
         # 2. update self.policy and self.V directly
         # self.V = Q.max(axis=1)
         # self.policy = Q.argmax(axis=1)
@@ -201,14 +217,16 @@ class MDP(object):
         if _sp.issparse(reward):
             raise NotImplementedError
         else:
-            r = _np.array(reward).reshape(self.S)
+            ###r = _np.array(reward).reshape(self.S)
+            r = _torch.tensor(reward).reshape(self.S)
             return tuple(r for a in range(self.A))
 
     def _computeArrayReward(self, reward):
         if _sp.issparse(reward):
             raise NotImplementedError
         else:
-            func = lambda x: _np.array(x).reshape(self.S)
+            ###func = lambda x: _np.array(x).reshape(self.S)
+            func = lambda x: _torch.tensor(x).reshape(self.S)
             return tuple(func(reward[:, a]) for a in range(self.A))
 
     def _computeMatrixReward(self, reward, transition):
@@ -221,7 +239,8 @@ class MDP(object):
         elif  _sp.issparse(transition):
             return transition.multiply(reward).sum(1).state_transition.reshape(self.S)
         else:
-            return _np.multiply(transition, reward).sum(1).reshape(self.S)
+            ###return _np.multiply(transition, reward).sum(1).reshape(self.S)
+            return _torch.multiply(transition, reward).sum(1).reshape(self.S)
 
     def run(self):
         # Raise error because child classes should implement this function.
@@ -356,7 +375,7 @@ class ValueIteration_sfmZW(MDP):
 
     """
 
-    def __init__(self, transitions, reward, discount, epsilon= 10 ** -6,
+    def __init__(self, transitions, reward, discount, epsilon= 10 ** -4,
                  max_iter = 1000, initial_value=0):
         # Initialise a value iteration MDP.
 
@@ -364,7 +383,8 @@ class ValueIteration_sfmZW(MDP):
 
         # initialization of optional arguments
         if initial_value == 0:
-            self.V = _np.zeros(self.S)
+            ###self.V = _np.zeros(self.S)
+            self.V = _torch.zeros(self.S)
 
         else:
             assert len(initial_value) == self.S, "The initial value must be " \
@@ -377,6 +397,10 @@ class ValueIteration_sfmZW(MDP):
             # computation of threshold of variation for V for an epsilon-
             # optimal policy
             self.thresh = epsilon * (1 - self.discount) / self.discount
+
+            # ADDED by ZW since numpy has a high resolution
+            self.thresh = max((2 ** 1 * _np.spacing(_np.float32(1))), self.thresh)
+
         else: # discount == 1
             # threshold of variation for V for an epsilon-optimal policy
             self.thresh = epsilon
@@ -404,14 +428,19 @@ class ValueIteration_sfmZW(MDP):
         # k =    max     [1 - latent_dim min[ P(j|s,a), p(j|s',a')] ]
         #     s,a,s',a'       j
         k = 0
-        h = _np.zeros(self.S)
+        ###h = _np.zeros(self.S)
+        h = _torch.zeros(self.S)
 
         for ss in range(self.S):
-            PP = _np.zeros((self.A, self.S))
+            ###PP = _np.zeros((self.A, self.S))
+            PP = _torch.zeros(self.A, self.S)
             for aa in range(self.A):
                 try:
                     PP[aa] = self.P[aa][:, ss]
                 except ValueError:
+                    """
+                    HOW TO CONVERT THIS TO TORCH????
+                    """
                     PP[aa] = self.P[aa][:, ss].todense().A1
             # minimum of the entire array.
             h[ss] = PP.min()
@@ -437,7 +466,7 @@ class ValueIteration_sfmZW(MDP):
         while True:
             self.iter += 1
 
-            Vprev = self.V.copy()
+            Vprev = self.V.clone().detach().requires_grad_(True) #NOT SURE ABUT THIS CLONE
 
             ''' modified by ZW
             # Bellman Operator: compute policy and value functions
@@ -454,6 +483,8 @@ class ValueIteration_sfmZW(MDP):
             '''
             variation = _util.getSpan(self.V - Vprev)
             #variation = _np.max(_np.abs(self.V - Vprev))   # modified by ZW
+            # print(self.V)
+            # print(variation)
 
             if self.verbose:
                 print(("    %s\t\t  %s" % (self.iter, variation)))
@@ -468,8 +499,8 @@ class ValueIteration_sfmZW(MDP):
                 break
 
         # store value and policy as tuples
-        self.V = tuple(self.V.tolist())
-        self.softpolicy = tuple(self.softpolicy.tolist())
+        # self.V = tuple(self.V.tolist())
+        # self.softpolicy = tuple(self.softpolicy.tolist())
 
         self.time = _time.time() - self.time
 
@@ -596,7 +627,8 @@ class ValueIteration_opZW(MDP):
 
         # initialization of optional arguments
         if initial_value == 0:
-            self.V = _np.zeros(self.S)
+            ###self.V = _np.zeros(self.S)
+            self.V = _torch.zeros(self.S)
 
         else:
             assert len(initial_value) == self.S, "The initial value must be " \
@@ -609,6 +641,9 @@ class ValueIteration_opZW(MDP):
             # computation of threshold of variation for V for an epsilon-
             # optimal policy
             self.thresh = epsilon * (1 - self.discount) / self.discount
+
+            # ADDED by ZW since numpy has a high resolution
+            self.thresh = max((2 ** 1 *_np.spacing(_np.float32(1))), self.thresh)
         else: # discount == 1
             # threshold of variation for V for an epsilon-optimal policy
             self.thresh = epsilon
@@ -636,10 +671,12 @@ class ValueIteration_opZW(MDP):
         # k =    max     [1 - latent_dim min[ P(j|s,a), p(j|s',a')] ]
         #     s,a,s',a'       j
         k = 0
-        h = _np.zeros(self.S)
+        ###h = _np.zeros(self.S)
+        h = _torch.zeros(self.S)
 
         for ss in range(self.S):
-            PP = _np.zeros((self.A, self.S))
+            ###PP = _np.zeros((self.A, self.S))
+            PP = _torch.zeros(self.A, self.S)
             for aa in range(self.A):
                 try:
                     PP[aa] = self.P[aa][:, ss]
@@ -682,7 +719,6 @@ class ValueIteration_opZW(MDP):
             ''' modified by ZW
             variation = _util.getSpan(self.V - Vprev)
             '''
-            #variation = _np.max(_np.abs(self.V - Vprev))  # modified by ZW
             variation = _util.getSpan(self.V - Vprev)
 
             if self.verbose:

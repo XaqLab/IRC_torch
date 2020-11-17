@@ -1,5 +1,5 @@
-import numpy as np
-
+#import numpy as np
+import torch
 
 class HMMonebox:
     def __init__(self, state_transition, obs_emission, latent_ini):
@@ -9,7 +9,7 @@ class HMMonebox:
         self.latent_dim = len(self.latent_ini)  # number of hidden state
 
     def _states(self, r):
-        return range(self.latent_dim * r, self.latent_dim * (r + 1))
+        return torch.arange(self.latent_dim * r, self.latent_dim * (r + 1))
 
     def forward(self, obs):
         """
@@ -24,12 +24,13 @@ class HMMonebox:
         act = obs[:, 0]   # action, two possible values: 0: doing nothing; 1: press button
         rew = obs[:, 1]   # observable, two possible values: 0 : not have; 1: have
 
-        alpha = np.zeros((self.latent_dim, T))   # initialize alpha value for each belief value
+        alpha = torch.zeros(self.latent_dim, T)
+        # initialize alpha value for each belief value
         alpha[:, 0] = self.latent_ini * self.obs_emission[act[0], self._states(rew[0])]
 
         for t in range(1, T):
-            alpha[:,  t] = np.dot(alpha[:, t - 1], self.state_transition[act[t - 1]][
-                np.ix_(self._states(rew[t-1]), self._states(rew[t]))]) * self.obs_emission[act[t], self._states(rew[t])]
+            alpha[:,  t] = torch.matmul(alpha[:, t - 1], self.state_transition[act[t - 1]][
+                torch.meshgrid(self._states(rew[t-1]), self._states(rew[t]))]) * self.obs_emission[act[t], self._states(rew[t])]
         return alpha
 
 
@@ -40,17 +41,17 @@ class HMMonebox:
         act = obs[:, 0]   # action, two possible values: 0: doing nothing; 1: press button
         rew = obs[:, 1]   # observable, two possible values: 0 : not have; 1: have
 
-        alpha = np.zeros((self.latent_dim, T))   # initialize alpha value for each belief value
-        scale = np.zeros(T)
+        alpha = torch.zeros(self.latent_dim, T)   # initialize alpha value for each belief value
+        scale = torch.zeros(T)
 
         alpha[:, 0] = self.latent_ini * self.obs_emission[act[0], self._states(rew[0])]
-        scale[0] = np.sum(alpha[:, 0])
+        scale[0] = torch.sum(alpha[:, 0])
         alpha[:, 0] = alpha[:, 0] / scale[0]
 
         for t in range(1, T):
-            alpha[:,  t] = np.dot(alpha[:, t - 1], self.state_transition[act[t - 1]][
-                np.ix_(self._states(rew[t-1]), self._states(rew[t]))]) * self.obs_emission[act[t], self._states(rew[t])]
-            scale[t] = np.sum(alpha[:, t])
+            alpha[:,  t] = torch.matmul(alpha[:, t - 1], self.state_transition[act[t - 1]][
+                torch.meshgrid(self._states(rew[t-1]), self._states(rew[t]))]) * self.obs_emission[act[t], self._states(rew[t])]
+            scale[t] = torch.sum(alpha[:, t])
             alpha[:, t] = alpha[:, t] / scale[t]
 
         return alpha, scale
@@ -66,10 +67,10 @@ class HMMonebox:
         act = obs[:, 0]   # 0: doing nothing; 1: press button
         rew = obs[:, 1]   # 0 : not have; 1: have
 
-        beta = np.zeros((self.latent_dim, T))
+        beta = torch.zeros(self.latent_dim, T)
         beta[:, -1] = 1
         for t in reversed(range(T - 1)):
-            beta[:, t] = np.dot(self.state_transition[act[t]][np.ix_(self._states(rew[t]), self._states(rew[t + 1]))],
+            beta[:, t] = torch.matmul(self.state_transition[act[t]][torch.meshgrid(self._states(rew[t]), self._states(rew[t + 1]))],
                                 beta[:, t+1] * self.obs_emission[act[t + 1], self._states(rew[t + 1])])
 
         return beta
@@ -80,11 +81,11 @@ class HMMonebox:
         act = obs[:, 0]   # 0: doing nothing; 1: press button
         rew = obs[:, 1]   # 0 : not have; 1: have
 
-        beta = np.zeros((self.latent_dim, T))
+        beta = torch.zeros(self.latent_dim, T)
         beta[:, T - 1] = 1
 
         for t in reversed(range(T - 1)):
-            beta[:, t] = np.dot(self.state_transition[act[t]][np.ix_(self._states(rew[t]), self._states(rew[t + 1]))],
+            beta[:, t] = torch.matmul(self.state_transition[act[t]][torch.meshgrid(self._states(rew[t]), self._states(rew[t + 1]))],
                                 beta[:, t+1] * self.obs_emission[act[t + 1], self._states(rew[t + 1])])
             beta[:, t] = beta[:, t] / scale[t + 1]
 
@@ -92,11 +93,11 @@ class HMMonebox:
 
     def observation_prob(self, obs):
         """ P( entire observation sequence | state_transition, obs_emission, latent_ini ) """
-        return np.sum(self.forward(obs)[:, -1])
+        return torch.sum(self.forward(obs)[:, -1])
 
     def compute_gamma(self, alpha, beta):
         gamma = alpha * beta
-        gamma = gamma / np.sum(gamma, 0)
+        gamma = gamma / torch.sum(gamma, 0)
 
         return gamma
 
@@ -106,12 +107,12 @@ class HMMonebox:
         act = obs[:, 0]   # 0: doing nothing; 1: press button
         rew = obs[:, 1]   # 0 : not have; 1: have
 
-        xi = np.zeros((T - 1, self.latent_dim, self.latent_dim))
+        xi = torch.zeros(T - 1, self.latent_dim, self.latent_dim)
 
         for t in range(T - 1):
-            xi[t, :, :] = np.diag(alpha[:, t]).dot(self.state_transition[act[t]][np.ix_(self._states(rew[t]), self._states(rew[t + 1]))]
-                                                   ).dot(np.diag(beta[:, t+1] * self.obs_emission[act[t + 1], self._states(rew[t + 1])]))
-            xi[t, :, :] = xi[t, :, :]/np.sum(xi[t, :, :])
+            xi[t, :, :] = torch.diag(alpha[:, t]).matmul(self.state_transition[act[t]][torch.meshgrid(self._states(rew[t]), self._states(rew[t + 1]))]
+                                                   ).matmul(torch.diag(beta[:, t+1] * self.obs_emission[act[t + 1], self._states(rew[t + 1])]))
+            xi[t, :, :] = xi[t, :, :]/torch.sum(xi[t, :, :])
 
         return xi
 
@@ -146,7 +147,7 @@ class HMMonebox:
         # delta function of latent variable when the ground truth is known
         T = obs.shape[0]  # length of a sample sequence
 
-        xi_delta = np.zeros((T, self.latent_dim, self.latent_dim))
+        xi_delta = torch.zeros(T, self.latent_dim, self.latent_dim)
 
         for t in range(T - 1):
             xi_delta[t, lat[t], lat[t+1]] = 1
@@ -160,20 +161,20 @@ class HMMonebox:
         rew = obs[:, 1]   # 0 : not have; 1: have
 
         # Entropy of all path that leads to a certain state at t certain time
-        Hpath = np.zeros((self.latent_dim, T))
+        Hpath = torch.zeros(self.latent_dim, T)
         # P(state at time t-1 | state at time t, observations up to time t)
-        lat_cond = np.zeros((T - 1, self.latent_dim, self.latent_dim))
+        lat_cond = torch.zeros(T - 1, self.latent_dim, self.latent_dim)
 
         alpha_scaled, _ = self.forward_scale(obs)
         Hpath[:, 0] = 0
 
         for t in range(1, T):
-            lat_cond[t - 1] = np.diag(alpha_scaled[:, t - 1]).dot(self.state_transition[act[t - 1]][np.ix_(self._states(rew[t - 1]), self._states(rew[t]))])
-            lat_cond[t - 1] = lat_cond[t - 1] / (np.sum(lat_cond[t - 1], axis = 0) + 1 * (np.sum(lat_cond[t - 1], axis = 0) == 0))
+            lat_cond[t - 1] = torch.diag(alpha_scaled[:, t - 1]).matmul(self.state_transition[act[t - 1]][torch.meshgrid(self._states(rew[t - 1]), self._states(rew[t]))])
+            lat_cond[t - 1] = lat_cond[t - 1] / (torch.sum(lat_cond[t - 1], axis = 0) + 1 * (torch.sum(lat_cond[t - 1], axis = 0) == 0))
 
-            Hpath[:, t] = Hpath[:, t - 1].dot(lat_cond[t - 1]) - np.sum(lat_cond[t - 1] * np.log(lat_cond[t - 1] + 10 ** -13 * (lat_cond[t - 1]==0)), axis = 0)
+            Hpath[:, t] = Hpath[:, t - 1].matmul(lat_cond[t - 1]) - torch.sum(lat_cond[t - 1] * torch.log(lat_cond[t - 1] + 10 ** -13 * (lat_cond[t - 1]==0)), axis = 0)
 
-        lat_ent = np.sum(Hpath[:, -1] * alpha_scaled[:, -1]) - np.sum(alpha_scaled[:, -1] * np.log(alpha_scaled[:, -1] + 10 ** -13 * (alpha_scaled[:, -1] == 0)))
+        lat_ent = torch.sum(Hpath[:, -1] * alpha_scaled[:, -1]) - torch.sum(alpha_scaled[:, -1] * torch.log(alpha_scaled[:, -1] + 10 ** -13 * (alpha_scaled[:, -1] == 0)))
 
         return lat_ent
 
@@ -195,19 +196,19 @@ class HMMonebox:
 
         gamma = self.compute_gamma(alpha, beta)
         xi = self.compute_xi(alpha, beta, obs)
-        Qaux1 = np.sum(np.log(self.latent_ini) * gamma[:, 0])
+        Qaux1 = torch.sum(torch.log(self.latent_ini) * gamma[:, 0])
         Qaux2 = 0
         Qaux3 = 0
 
 
         for t in range(T - 1):
-            Qaux2 += np.sum(np.log(Anew[act[t]][np.ix_(self._states(rew[t]), self._states(rew[t + 1]))] +
-                                    10 ** -13 * (Anew[act[t]][np.ix_(self._states(rew[t]), self._states(rew[t + 1]))] == 0))
+            Qaux2 += torch.sum(torch.log(Anew[act[t]][torch.meshgrid(self._states(rew[t]), self._states(rew[t + 1]))] +
+                                    10 ** -13 * (Anew[act[t]][torch.meshgrid(self._states(rew[t]), self._states(rew[t + 1]))] == 0))
                              * xi[t, :, :])
 
 
         for t in range(T):
-            Qaux3 += np.sum(np.log(Bnew[act[t], self._states(rew[t])] +
+            Qaux3 += torch.sum(torch.log(Bnew[act[t], self._states(rew[t])] +
                                     10 ** -13 * ( Bnew[act[t], self._states(rew[t])] == 0)) * gamma[:, t])
 
         Qaux = 1 * (Qaux1 + Qaux2) + 1 * Qaux3
@@ -216,4 +217,6 @@ class HMMonebox:
         return Qaux
 
     def log_likelihood(self, obs, Anew, Bnew):
-        return self.latent_entr(obs) + self.computeQaux(obs, Anew, Bnew)
+        lat_ento = self.latent_entr(obs)
+        CDLL = self.computeQaux(obs, Anew, Bnew)
+        return lat_ento + CDLL

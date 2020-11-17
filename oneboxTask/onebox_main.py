@@ -88,21 +88,23 @@ def likelihood_tensor(food_missed, app_rate, disapp_rate, food_consumed, push_bu
     # point_all = [np.array(pointIni) + (np.random.rand(len(pointIni)) * 2 - 1) * 0.001 * 0,
     #              np.array(pointIni) + (np.random.rand(len(pointIni)) * 2 - 1) * 0.001 * 0]
 
-    log_likelihood_all = [-10 ** 6, -10 ** 6]
+    #log_likelihood_all = [-10 ** 6, -10 ** 6]
 
-    p_last = parameters_agent.copy()
+    #p_last = parameters_agent.copy()
     #
-    pi = np.ones(nq) / nq
-    onebox_temp = oneboxMDP(discount, nq, nr, na, p_last)
+    pi = torch.ones(nq) / nq
+    onebox_temp = oneboxMDP(discount, nq, nr, na, parameters_agent)
     onebox_temp.setupMDP()
     onebox_temp.solveMDP_sfm()
     ThA = onebox_temp.ThA
     softpolicy = onebox_temp.softpolicy
     #print(softpolicy)
-    oneboxHMM = HMMonebox(ThA, softpolicy, pi)
-    log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
+    #oneboxHMM = HMMonebox(ThA, softpolicy, pi)
+    #log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
 
-    return torch.tensor(log_likelihood, requires_grad=True).type('torch.FloatTensor')
+    #return log_likelihood.clone().detach().requires_grad_(True)
+
+    return torch.sum(vi)
 
 def main():
     start_time = time.time()
@@ -115,7 +117,7 @@ def main():
     food_missed = .1 #0
     food_consumed = .9 #1
     belief_diffusion = .1
-    policy_temperature = .01
+    policy_temperature = .06
     push_button_cost = .3
 
 
@@ -128,35 +130,35 @@ def main():
     push_button_cost = torch.autograd.Variable(torch.tensor([push_button_cost]),requires_grad=True) #.3
 
 
-    app_rate_experiment = .3
-    disapp_rate_experiment = .1
-
-    parameters_agent = {'food_missed': food_missed,
-                        'app_rate': app_rate,
-                        'disapp_rate': disapp_rate,
-                        'food_consumed': food_consumed,
-                        'push_button_cost': push_button_cost,
-                        'belief_diffusion': belief_diffusion,
-                        'policy_temperature': policy_temperature
-                        }
-    parameters_agent = collections.OrderedDict(sorted(parameters_agent.items()))
-
-    parameters_exp = {'app_rate_experiment': app_rate_experiment,
-                      'disapp_rate_experiment': disapp_rate_experiment
-                      }
-    parameters_exp = collections.OrderedDict(sorted(parameters_exp.items()))
-
-    nq = 5
-    na = 2
-    nr = 2
-    nl = 1
-    discount = 0.99
-
-    # obsN, latN, truthN, datestring = onebox_data(parameters_agent, parameters_exp,
-    #                                              sample_length = sample_length,
-    #                                              sample_number = sample_number,
-    #                                              nq = nq, nr = nr, na = na, discount = discount, policy = 'sfm')
-
+    # app_rate_experiment = .3
+    # disapp_rate_experiment = .1
+    #
+    # parameters_agent = {'food_missed': food_missed,
+    #                     'app_rate': app_rate,
+    #                     'disapp_rate': disapp_rate,
+    #                     'food_consumed': food_consumed,
+    #                     'push_button_cost': push_button_cost,
+    #                     'belief_diffusion': belief_diffusion,
+    #                     'policy_temperature': policy_temperature
+    #                     }
+    # parameters_agent = collections.OrderedDict(sorted(parameters_agent.items()))
+    #
+    # parameters_exp = {'app_rate_experiment': app_rate_experiment,
+    #                   'disapp_rate_experiment': disapp_rate_experiment
+    #                   }
+    # parameters_exp = collections.OrderedDict(sorted(parameters_exp.items()))
+    #
+    # nq = 5
+    # na = 2
+    # nr = 2
+    # nl = 1
+    # discount = 0.99
+    #
+    # # obsN, latN, truthN, datestring = onebox_data(parameters_agent, parameters_exp,
+    # #                                              sample_length = sample_length,
+    # #                                              sample_number = sample_number,
+    # #                                              nq = nq, nr = nr, na = na, discount = discount, policy = 'sfm')
+    #
     # path = os.getcwd()
     # dataN_pkl_file = open(path + '/Data/10272020(1115)_dataN_onebox.pkl', 'rb')
     # dataN_pkl = pickle.load(dataN_pkl_file)
@@ -165,28 +167,29 @@ def main():
     #
     # # actN = obsN[:, :, 0]
     # # rewN = obsN[:, :, 1]
-    #
     # #
-    # # """
-    # # IRC
-    # # """
-    # obs = np.squeeze(obsN)
+    # # #
+    # # # """
+    # # # IRC
+    # # # """
+    # # obs = np.squeeze(obsN)
     # obs = np.squeeze(obsN)[:10, :]
+    # # #
+    # # # pointIni = list(parameters_agent.values())
+    # # # point_all = [np.array(pointIni) + (np.random.rand(len(pointIni)) * 2 - 1) * 0.005 * 0,
+    # # #               np.array(pointIni) + (np.random.rand(len(pointIni)) * 2 - 1) * 0.005 * 0]
     # #
-    # # pointIni = list(parameters_agent.values())
-    # # point_all = [np.array(pointIni) + (np.random.rand(len(pointIni)) * 2 - 1) * 0.005 * 0,
-    # #               np.array(pointIni) + (np.random.rand(len(pointIni)) * 2 - 1) * 0.005 * 0]
-    #
-    # log_likelihood_all = [-10 ** 6, -10 ** 6]
-    #
+    # # log_likelihood_all = [-10 ** 6, -10 ** 6]
+    # #
     # p_last = parameters_agent.copy()
-    #
-    # pi = np.ones(nq) / nq
+    # #
+    # pi = torch.ones(nq) / nq
     # onebox_temp = oneboxMDP(discount, nq, nr, na, p_last)
     # onebox_temp.setupMDP()
     # onebox_temp.solveMDP_sfm()
     # ThA = onebox_temp.ThA
     # softpolicy = onebox_temp.softpolicy
+
     #
     # oneboxHMM = HMMonebox(ThA, softpolicy, pi)
     # log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
@@ -199,11 +202,12 @@ def main():
     # print(g(para))
 
     #print("gradient")
-    ll = likelihood_tensor(food_missed, app_rate,disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature)
-    print(ll)
+    ll = likelihood_tensor(food_missed, app_rate, disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature)
+    #print(ll)
+    #food_missed.retain_grad()
     #para = [food_missed, app_rate, disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature]
     ll.backward()
-    app_rate.grad
+    print(food_missed.grad)
     #
     oneboxd = oneboxMDPder(discount, nq, nr, na, p_last)
     oneboxd1st = oneboxd.dloglikelihhod_dpara_sim(obs)

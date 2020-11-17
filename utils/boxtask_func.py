@@ -5,13 +5,70 @@ from scipy.stats import norm, binom
 from math import sqrt
 from scipy.integrate import quad
 from scipy import optimize
+import torch
+import math
 
-def kronn(*args):
+def kron(a, b):
+    """
+    Kronecker product of matrices a and b with leading batch dimensions.
+    Batch dimensions are broadcast. The number of them mush
+    :type a: torch.Tensor
+    :type b: torch.Tensor
+    :rtype: torch.Tensor
+    """
+    siz1 = torch.Size(torch.tensor(a.shape[-2:]) * torch.tensor(b.shape[-2:]))
+    res = a.unsqueeze(-1).unsqueeze(-3) * b.unsqueeze(-2).unsqueeze(-4)
+    siz0 = res.shape[:-4]
+    return res.reshape(siz0 + siz1)
+
+# def kronn(*args):
+#     # returns multidimensional kronecker product of all matrices in the argument list
+#     z = args[0]
+#     for i in range(1, len(args)):
+#         ###z = np.kron(z, args[i])
+#         z = kron(z, args[i])
+#     return z
+
+def tensorkron(t1, t2):
+    """
+    Computes the Kronecker product between two tensors.
+    See https://en.wikipedia.org/wiki/Kronecker_product
+    """
+    mark = 0
+    if len(t1.shape) == 1 and len(t2.shape) == 1:
+        mark = 1
+
+    if len(t1.shape) == 1:
+        t1 = t1.unsqueeze(-2)
+    if len(t2.shape) == 1:
+        t2 = t2.unsqueeze(-2)
+
+    t1_height, t1_width = t1.size()
+    t2_height, t2_width = t2.size()
+    out_height = t1_height * t2_height
+    out_width = t1_width * t2_width
+
+    tiled_t2 = t2.repeat(t1_height, t1_width)
+    expanded_t1 = (
+        t1.unsqueeze(2)
+            .unsqueeze(3)
+            .repeat(1, t2_height, t2_width, 1)
+            .view(out_height, out_width)
+    )
+
+    if mark == 1:
+        return (expanded_t1 * tiled_t2[0])[0]
+
+    return expanded_t1 * tiled_t2
+
+def tensorkronn(*args):
     # returns multidimensional kronecker product of all matrices in the argument list
     z = args[0]
     for i in range(1, len(args)):
-        z = np.kron(z, args[i])
+        ###z = np.kron(z, args[i])
+        z = tensorkron(z, args[i])
     return z
+
 
 
 def beliefTransitionMatrix(p_appear, p_disappear, nq, w):
@@ -37,7 +94,8 @@ def beliefTransitionMatrix(p_appear, p_disappear, nq, w):
 
             Tqqq[j, i] = max(0, min(q + dq, bp) - max(q, bm) )
             Tqqq[j, i] = Tqqq[j, i] / (bp - bm) * sqrt(dq ** 2 + (bp - bm) ** 2)
-    Tqqq = Tqqq / np.tile(np.sum(Tqqq, 0), (nq, 1))
+    # Tqqq = Tqqq / np.tile(np.sum(Tqqq, 0), (nq, 1))
+    Tqqq = Tqqq / torch.sum(Tqqq, 0).repeat((nq, 1))
 
     nt = 20
     d = w / nt
@@ -46,17 +104,20 @@ def beliefTransitionMatrix(p_appear, p_disappear, nq, w):
     dD[-2, -1] = 2 * d
     D = expm(dD * nt)
     D = D / np.tile(np.sum(D, 0), (nq, 1))
-
-    Tqqq = np.dot(D, Tqqq)
+    D = torch.from_numpy(D)
+    ###Tqqq = np.dot(D, Tqqq)
+    Tqqq = torch.mm(D, Tqqq)
 
     return Tqqq
 
 
-def beliefTransitionMatrixGaussian(p_appear, p_disappear, nq, sigma = 0.1):
+def beliefTransitionMatrixGaussian(p_appear, p_disappear, nq, sigma):
     mu = 0
 
-    d = np.zeros((nq, nq))
-    Trrr = np.zeros((nq, nq))
+    # d = np.zeros((nq, nq))
+    # Trrr = np.zeros((nq, nq))
+    d = torch.zeros(nq, nq)
+    Trrr = torch.zeros(nq, nq)
     dq = 1 / nq
     a = 1 - p_disappear - p_appear
 
@@ -66,9 +127,11 @@ def beliefTransitionMatrixGaussian(p_appear, p_disappear, nq, sigma = 0.1):
             qq = j * dq + dq / 2
 
             d[j, i] = abs(a * q - qq + p_appear) / sqrt(a ** 2 + 1)
-            Trrr[j, i] = norm.pdf(d[j, i], mu, sigma)
+            Trrr[j, i] = 1/np.sqrt(2*math.pi) / sigma * math.exp(-1/2 * ((d[j, i] - mu) / sigma) ** 2 )
+            #norm.pdf(d[j, i], mu, sigma)
 
-    Tb = Trrr / np.tile(np.sum(Trrr, 0), (nq, 1))
+    #Tb = Trrr / np.tile(np.sum(Trrr, 0), (nq, 1))
+    Tb = Trrr / torch.sum(Trrr, 0).repeat((nq, 1))
 
     return Tb
 
@@ -136,41 +199,41 @@ def beliefTransitionMatrixGaussianCol(p_appear, p_disappear, qmin, qmax, Ncol, n
     return Trans_belief_obs_approx, Obs_emis.dot(Trans_state), den
 
 
-def beliefTransitionMatrixGaussianDerivative(p_appear, p_disappear, nq, sigma=0.1):
-    mu = 0
-
-    d = np.zeros((nq, nq))
-    pdpgamma = np.zeros((nq, nq))  # derivative with respect to the appear rate, p_appear
-    pdpepsilon = np.zeros((nq, nq)) # derivative with respect to the disappear rate, p_disappear
-    dq = 1 / nq
-    a = 1 - p_disappear - p_appear
-
-    for i in range(nq):
-        for j in range(nq):
-            q = i * dq + dq / 2
-            qq = j * dq + dq / 2
-
-            d[j, i] = abs(a * q - qq + p_appear) / sqrt(a ** 2 + 1)
-            pdpepsilon[j, i] = np.sign(a * q - qq + p_appear) * \
-                               (-q * sqrt(a ** 2 + 1) + a/sqrt(a ** 2 + 1) * (a * q - qq + p_appear)) / (a ** 2 + 1)
-            pdpgamma[j, i] = np.sign(a * q - qq + p_appear) * \
-                             ((1-q) * sqrt(a ** 2 + 1) + a/sqrt(a ** 2 + 1) * (a * q - qq + p_appear)) / (a ** 2 + 1)
-
-    Trrr = norm.pdf(d, mu, sigma)  # probability from Gaussian distribution
-    pTrrrpd = Trrr * d * (-1) / (sigma ** 2)  # partial derivative of Trrr with respect to d
-
-    dTbdgamma = np.zeros((nq, nq))  # derivative of Tb with respect to the p_appear(gamma) rate
-    dTbdepsilon = np.zeros((nq, nq))  # derivative of Tb with respect to the p_disappear(epsilon) rate
-
-    for i in range(nq):
-        for j in range(nq):
-            dTbdgamma[j, i] = 1 / np.sum(Trrr[:, i]) * pTrrrpd[j, i] * pdpgamma[j, i] - \
-                             Trrr[j, i] / (np.sum(Trrr[:, i]) ** 2) * np.sum(pTrrrpd[:, i] * pdpgamma[:, i])
-            dTbdepsilon[j, i] = 1 / np.sum(Trrr[:, i]) * pTrrrpd[j, i] * pdpepsilon[j, i] - \
-                             Trrr[j, i] / (np.sum(Trrr[:, i]) ** 2) * np.sum(pTrrrpd[:, i] * pdpepsilon[:, i])
-    Tb = Trrr / np.tile(np.sum(Trrr, 0), (nq, 1))
-
-    return dTbdgamma, dTbdepsilon
+# def beliefTransitionMatrixGaussianDerivative(p_appear, p_disappear, nq, sigma=0.1):
+#     mu = 0
+#
+#     d = np.zeros((nq, nq))
+#     pdpgamma = np.zeros((nq, nq))  # derivative with respect to the appear rate, p_appear
+#     pdpepsilon = np.zeros((nq, nq)) # derivative with respect to the disappear rate, p_disappear
+#     dq = 1 / nq
+#     a = 1 - p_disappear - p_appear
+#
+#     for i in range(nq):
+#         for j in range(nq):
+#             q = i * dq + dq / 2
+#             qq = j * dq + dq / 2
+#
+#             d[j, i] = abs(a * q - qq + p_appear) / sqrt(a ** 2 + 1)
+#             pdpepsilon[j, i] = np.sign(a * q - qq + p_appear) * \
+#                                (-q * sqrt(a ** 2 + 1) + a/sqrt(a ** 2 + 1) * (a * q - qq + p_appear)) / (a ** 2 + 1)
+#             pdpgamma[j, i] = np.sign(a * q - qq + p_appear) * \
+#                              ((1-q) * sqrt(a ** 2 + 1) + a/sqrt(a ** 2 + 1) * (a * q - qq + p_appear)) / (a ** 2 + 1)
+#
+#     Trrr = norm.pdf(d, mu, sigma)  # probability from Gaussian distribution
+#     pTrrrpd = Trrr * d * (-1) / (sigma ** 2)  # partial derivative of Trrr with respect to d
+#
+#     dTbdgamma = np.zeros((nq, nq))  # derivative of Tb with respect to the p_appear(gamma) rate
+#     dTbdepsilon = np.zeros((nq, nq))  # derivative of Tb with respect to the p_disappear(epsilon) rate
+#
+#     for i in range(nq):
+#         for j in range(nq):
+#             dTbdgamma[j, i] = 1 / np.sum(Trrr[:, i]) * pTrrrpd[j, i] * pdpgamma[j, i] - \
+#                              Trrr[j, i] / (np.sum(Trrr[:, i]) ** 2) * np.sum(pTrrrpd[:, i] * pdpgamma[:, i])
+#             dTbdepsilon[j, i] = 1 / np.sum(Trrr[:, i]) * pTrrrpd[j, i] * pdpepsilon[j, i] - \
+#                              Trrr[j, i] / (np.sum(Trrr[:, i]) ** 2) * np.sum(pTrrrpd[:, i] * pdpepsilon[:, i])
+#     Tb = Trrr / np.tile(np.sum(Trrr, 0), (nq, 1))
+#
+#     return dTbdgamma, dTbdepsilon
 
 
 '''
@@ -345,6 +408,30 @@ def reversekron(AB, n):
     BA = col2im(im2col(AB, tuple(n[1] * np.array([1, 1])), 'distinct').T, tuple(n[0] * np.array([1, 1])),
          np.prod(n), 'distinct')
     return BA
+
+def tensorsum_torch(A, B):
+    ra, ca = A.shape
+    rb, cb = B.shape
+    C = torch.empty(ra * rb, ca * cb)
+
+    for i in range(ra):
+        for j in range(ca):
+            C[i*rb : (i+1)*rb, j*cb : (j+1)*cb] = A[i, j] + B
+
+    return C
+
+def tensorsumm_torch(*args):
+    '''
+    :param args:
+    :return: returns multidimensional kronecker sum of all matrices in list
+    Note that the args must be two-dimensional. When any of the ars is a vector, need to pass in a
+i    '''
+    z = args[0]
+    for i in range(1, len(args)):
+        z = tensorsum_torch(z, args[i])
+
+    return z
+
 
 
 def tensorsum(A, B):

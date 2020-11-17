@@ -7,6 +7,7 @@ from __future__ import division
 from utils.boxtask_func import *
 from utils.MDPclass import *
 from oneboxTask.onebox_HMM import *
+import torch
 import numpy.matlib
 from scipy.linalg import block_diag
 from numpy.linalg import inv
@@ -29,8 +30,9 @@ class oneboxMDP:
         self.na = na
         self.n = self.nq * self.nr  # total number of states
         self.parameters = parameters
-        self.ThA = np.zeros((self.na, self.n, self.n))
-        self.R = np.zeros((self.na, self.n, self.n))
+        self.ThA = torch.empty(self.na, self.n, self.n)
+        self.ThA_t = torch.zeros(self.na, self.n, self.n)
+        self.R = torch.zeros(self.na, self.n, self.n)
 
     def setupMDP(self):
         """
@@ -52,15 +54,17 @@ class oneboxMDP:
         reward = 1
 
         # initialize probability distribution over states (belief and world)
-        pr0 = np.array([1, 0])  # (r=0, r=1) initially no food in mouth p(R=0)=1.
-        pb0 = np.insert(np.zeros(self.nq - 1), 0, 1)  # initial belief states (here, lowest availability)
+        pr0 = torch.tensor([1, 0])  # (r=0, r=1) initially no food in mouth p(R=0)=1.
+        ### pb0 = np.insert(np.zeros(self.nq - 1), 0, 1)  # initial belief states (here, lowest availability)
+        pb0 = torch.cat((torch.tensor([1]), torch.zeros(self.nq - 1)))
 
-        ph0 = kronn(pr0, pb0)
+        ph0 = tensorkronn(pr0, pb0)
         # kronecker product of these initial distributions
         # Note that this ordering makes the subsequent products easiest
 
         # setup single-variable transition matrices
-        Tr = np.array([[1, food_consumed], [0, 1 - food_consumed]])  # consume reward
+        #Tr = np.array([[1, food_consumed], [0, 1 - food_consumed]])  # consume reward
+        Tr = torch.tensor([[1, food_consumed], [0, 1 - food_consumed]])
 
         # belief transition matrix
         # Tb = beliefTransitionMatrix(app_rate, disapp_rate, nq, eta)
@@ -68,30 +72,41 @@ class oneboxMDP:
         Tb = beliefTransitionMatrixGaussian(app_rate, disapp_rate, self.nq, belief_diffusion)
 
         # ACTION: do nothing
-        self.ThA[a0, :, :] = kronn(Tr, Tb)
+        self.ThA_t[a0, :, :] = tensorkronn(Tr, Tb)
         # kronecker product of these transition matrices
 
         # ACTION: push button
-        bL = (np.array(range(self.nq)) + 1 / 2) / self.nq
+        ###bL = (np.array(range(self.nq)) + 1 / 2) / self.nq
+        bL = (torch.tensor(range(self.nq)) + 1 / 2) / self.nq
 
-        Trb = np.concatenate((np.array([np.insert(np.zeros(self.nq), 0, 1 - bL)]),
-                              np.zeros((self.nq - 2, 2 * self.nq)),
-                              np.array([np.insert([np.zeros(self.nq)], 0, food_missed * bL)]),
-                              np.array([np.insert([(1 - food_missed) * bL], self.nq, 1 - bL)]),
-                              np.zeros(((self.nq - 2), 2 * self.nq)),
-                              np.array([np.insert([np.zeros(self.nq)], self.nq, bL)])), axis=0)
-        self.ThA[pb, :, :] = Trb.dot(self.ThA[a0, :, :])  # first wait for an usual time, then pb
+        Trb = torch.cat((torch.cat((1 - bL, torch.zeros(self.nq))).unsqueeze(-2),
+                         torch.zeros(self.nq - 2, 2 * self.nq),
+                         torch.cat((food_missed * bL, torch.zeros(self.nq))).unsqueeze(-2),
+                         torch.cat(((1 - food_missed) * bL, 1 - bL)).unsqueeze(-2),
+                         torch.zeros((self.nq - 2), 2 * self.nq),
+                         torch.cat((torch.zeros( self.nq), bL)).unsqueeze(-2)), dim=0)
+        self.ThA_t[pb, :, :] = Trb.matmul(self.ThA_t[a0, :, :])  # first wait for an usual time, then pb
+
+        # Trb = np.concatenate((np.array([np.insert(np.zeros(self.nq), 0, 1 - bL)]),
+        #                       np.zeros((self.nq - 2, 2 * self.nq)),
+        #                       np.array([np.insert([np.zeros(self.nq)], 0, food_missed * bL)]),
+        #                       np.array([np.insert([(1 - food_missed) * bL], self.nq, 1 - bL)]),
+        #                       np.zeros(((self.nq - 2), 2 * self.nq)),
+        #                       np.array([np.insert([np.zeros(self.nq)], self.nq, bL)])), axis=0)
+        # self.ThA[pb, :, :] = Trb.dot(self.ThA[a0, :, :])  # first wait for an usual time, then pb
         #self.ThA[pb, :, :] = Trb
 
-        Reward_h = tensorsumm(np.array([[0, reward]]), np.zeros((1, self.nq)))
-        Reward_a = - np.array([0, push_button_cost])
+        # Reward_h = tensorsumm(np.array([[0, reward]]), np.zeros((1, self.nq)))
+        # Reward_a = - np.array([0, push_button_cost])
+        Reward_h = tensorsumm_torch(torch.tensor([[0, reward]]), torch.zeros(1, self.nq)).squeeze()
+        Reward_a = - torch.tensor([0, push_button_cost])
 
-        [R1, R2, R3] = np.meshgrid(Reward_a.T, Reward_h, Reward_h, indexing='ij')
+        [R1, R2, R3] = torch.meshgrid(Reward_a, Reward_h, Reward_h)
         reward = R1 + R3
         self.R = reward
 
         for i in range(self.na):
-            self.ThA[i, :, :] = self.ThA[i, :, :].T
+            self.ThA[i, :, :] = torch.t(self.ThA_t[i, :, :])
 
     def solveMDP_op(self, epsilon = 10**-6, niterations = 10000):
         """
@@ -114,7 +129,8 @@ class oneboxMDP:
         vi = ValueIteration_opZW(self.ThA, self.R, self.discount, epsilon, niterations)
         vi.run()
         self.Q = self._QfromV(vi)   # shape na * number of state, use value to calculate Q value
-        self.optpolicy = np.array(vi.policy)
+        #self.optpolicy = np.array(vi.policy)
+        self.optpolicy = torch.tensor(vi.policy)
 
         # policy iteration
         #latent_ini = mdp.ValueIteration(self.ThA, self.R, self.discount, epsilon, niterations)
@@ -141,16 +157,17 @@ class oneboxMDP:
         vi = ValueIteration_sfmZW(self.ThA, self.R, self.discount, epsilon, niterations, initial_value)
         vi.run(policy_temperature)
         self.Qsfm = self._QfromV(vi)   # shape na * number of state, use value to calculate Q value
-        self.softpolicy = np.array(vi.softpolicy)
+        #self.softpolicy = np.array(vi.softpolicy)
+        self.softpolicy = vi.softpolicy.clone().detach().requires_grad_(True)
 
         return  vi.V
 
 
     def _QfromV(self, ValueIteration):
-        Q = np.zeros((ValueIteration.A, ValueIteration.S)) # Q is of shape: num of actions * num of states
+        Q = torch.zeros(ValueIteration.A, ValueIteration.S) # Q is of shape: num of actions * num of states
         for a in range(ValueIteration.A):
             Q[a, :] = ValueIteration.R[a] + ValueIteration.discount * \
-                                            ValueIteration.P[a].dot(ValueIteration.V)
+                                            ValueIteration.P[a].matmul(ValueIteration.V)
         return Q
 
 
