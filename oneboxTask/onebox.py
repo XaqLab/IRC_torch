@@ -30,9 +30,9 @@ class oneboxMDP:
         self.na = na
         self.n = self.nq * self.nr  # total number of states
         self.parameters = parameters
-        self.ThA = torch.empty(self.na, self.n, self.n)
-        self.ThA_t = torch.zeros(self.na, self.n, self.n)
-        self.R = torch.zeros(self.na, self.n, self.n)
+        self.ThA = []  #torch.empty(self.na, self.n, self.n)
+        self.ThA_t = [] #torch.zeros(self.na, self.n, self.n)
+        self.R = []  #torch.zeros(self.na, self.n, self.n)
 
     def setupMDP(self):
         """
@@ -64,7 +64,7 @@ class oneboxMDP:
 
         # setup single-variable transition matrices
         #Tr = np.array([[1, food_consumed], [0, 1 - food_consumed]])  # consume reward
-        Tr = torch.tensor([[1, food_consumed], [0, 1 - food_consumed]])
+        Tr = torch.tensor([[1, 0], [0, 1]]) + food_consumed * torch.tensor([[0, 1], [0, -1]])
 
         # belief transition matrix
         # Tb = beliefTransitionMatrix(app_rate, disapp_rate, nq, eta)
@@ -72,20 +72,37 @@ class oneboxMDP:
         Tb = beliefTransitionMatrixGaussian(app_rate, disapp_rate, self.nq, belief_diffusion)
 
         # ACTION: do nothing
-        self.ThA_t[a0, :, :] = tensorkronn(Tr, Tb)
+        #self.ThA_t[a0, :, :] = tensorkronn(Tr, Tb)
+        self.ThA_t.append(tensorkronn(Tr, Tb))
         # kronecker product of these transition matrices
 
         # ACTION: push button
         ###bL = (np.array(range(self.nq)) + 1 / 2) / self.nq
         bL = (torch.tensor(range(self.nq)) + 1 / 2) / self.nq
 
+        # Trb = torch.cat((torch.cat((1 - bL, torch.zeros(self.nq))).unsqueeze(-2),
+        #                  torch.zeros(self.nq - 2, 2 * self.nq),
+        #                  torch.cat((food_missed * bL, torch.zeros(self.nq))).unsqueeze(-2),
+        #                  torch.cat(((1 - food_missed) * bL, 1 - bL)).unsqueeze(-2),
+        #                  torch.zeros((self.nq - 2), 2 * self.nq),
+        #                  torch.cat((torch.zeros( self.nq), bL)).unsqueeze(-2)), dim=0)
+
         Trb = torch.cat((torch.cat((1 - bL, torch.zeros(self.nq))).unsqueeze(-2),
                          torch.zeros(self.nq - 2, 2 * self.nq),
-                         torch.cat((food_missed * bL, torch.zeros(self.nq))).unsqueeze(-2),
-                         torch.cat(((1 - food_missed) * bL, 1 - bL)).unsqueeze(-2),
+                         torch.cat((torch.zeros(self.nq), torch.zeros(self.nq))).unsqueeze(-2),
+                         torch.cat((bL, 1 - bL)).unsqueeze(-2),
                          torch.zeros((self.nq - 2), 2 * self.nq),
-                         torch.cat((torch.zeros( self.nq), bL)).unsqueeze(-2)), dim=0)
-        self.ThA_t[pb, :, :] = Trb.matmul(self.ThA_t[a0, :, :])  # first wait for an usual time, then pb
+                         torch.cat((torch.zeros(self.nq), bL)).unsqueeze(-2)), dim=0) + \
+              torch.cat((torch.cat((torch.zeros(self.nq), torch.zeros(self.nq))).unsqueeze(-2),
+                         torch.zeros(self.nq - 2, 2 * self.nq),
+                         torch.cat((bL, torch.zeros(self.nq))).unsqueeze(-2),
+                         torch.cat(( - bL, torch.zeros(self.nq))).unsqueeze(-2),
+                         torch.zeros((self.nq - 2), 2 * self.nq),
+                         torch.cat((torch.zeros(self.nq), torch.zeros(self.nq))).unsqueeze(-2)), dim=0) * food_missed
+
+
+
+        self.ThA_t.append(Trb.matmul(self.ThA_t[a0]))  # first wait for an usual time, then pb
 
         # Trb = np.concatenate((np.array([np.insert(np.zeros(self.nq), 0, 1 - bL)]),
         #                       np.zeros((self.nq - 2, 2 * self.nq)),
@@ -98,15 +115,18 @@ class oneboxMDP:
 
         # Reward_h = tensorsumm(np.array([[0, reward]]), np.zeros((1, self.nq)))
         # Reward_a = - np.array([0, push_button_cost])
-        Reward_h = tensorsumm_torch(torch.tensor([[0, reward]]), torch.zeros(1, self.nq)).squeeze()
-        Reward_a = - torch.tensor([0, push_button_cost])
+        Reward_h = tensorsumm_torch(torch.tensor([[0, 1]]) * reward,
+                                    torch.zeros(1, self.nq)).squeeze()
+        Reward_a = - torch.tensor([0, 1]) * push_button_cost
 
         [R1, R2, R3] = torch.meshgrid(Reward_a, Reward_h, Reward_h)
         reward = R1 + R3
         self.R = reward
 
+        self.ThA_t = torch.stack(self.ThA_t)
         for i in range(self.na):
-            self.ThA[i, :, :] = torch.t(self.ThA_t[i, :, :])
+            self.ThA.append(torch.t(self.ThA_t[i]))
+        self.ThA = torch.stack(self.ThA)
 
     def solveMDP_op(self, epsilon = 10**-6, niterations = 10000):
         """
@@ -129,10 +149,11 @@ class oneboxMDP:
         vi = ValueIteration_opZW(self.ThA, self.R, self.discount, epsilon, niterations)
         vi.run()
         self.Q = self._QfromV(vi)   # shape na * number of state, use value to calculate Q value
+
         #self.optpolicy = np.array(vi.policy)
         self.optpolicy = torch.tensor(vi.policy)
 
-        # policy iteration
+        ## policy iteration
         #latent_ini = mdp.ValueIteration(self.ThA, self.R, self.discount, epsilon, niterations)
         #latent_ini.run()
         #self.Q = self._QfromV(latent_ini)
@@ -158,24 +179,19 @@ class oneboxMDP:
         vi.run(policy_temperature)
         self.Qsfm = self._QfromV(vi)   # shape na * number of state, use value to calculate Q value
         #self.softpolicy = np.array(vi.softpolicy)
-        self.softpolicy = vi.softpolicy.clone().detach().requires_grad_(True)
+        self.softpolicy = vi.softpolicy
 
         return  vi.V
 
 
     def _QfromV(self, ValueIteration):
-
-        # Q =[]
-        # Q.append()
-        # Q = torch.stack(Q)
-        Q = torch.zeros(ValueIteration.A, ValueIteration.S) # Q is of shape: num of actions * num of states
+        #Q = torch.zeros(ValueIteration.A, ValueIteration.S) # Q is of shape: num of actions * num of states
+        Q = []
         for a in range(ValueIteration.A):
-            Q[a, :] = ValueIteration.R[a] + ValueIteration.discount * \
-                                            ValueIteration.P[a].matmul(ValueIteration.V)
+            Q.append(ValueIteration.R[a] + ValueIteration.discount * \
+                                            ValueIteration.P[a].matmul(ValueIteration.V))
+        Q = torch.stack(Q)
         return Q
-
-
-
 
 # class onebox_generate(oneboxMDP):
 #     """
