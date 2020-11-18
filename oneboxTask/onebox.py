@@ -164,6 +164,10 @@ class oneboxMDP:
 
 
     def _QfromV(self, ValueIteration):
+
+        # Q =[]
+        # Q.append()
+        # Q = torch.stack(Q)
         Q = torch.zeros(ValueIteration.A, ValueIteration.S) # Q is of shape: num of actions * num of states
         for a in range(ValueIteration.A):
             Q[a, :] = ValueIteration.R[a] + ValueIteration.discount * \

@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="df70ce86-e03a-449b-8a9a-e165588d1986" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,7 +70,7 @@
       <option name="presentableId" value="Default" />
       <updated>1604595234088</updated>
       <workItem from="1604595235446" duration="47465000" />
-      <workItem from="1605641402186" duration="1053000" />
+      <workItem from="1605641402186" duration="5370000" />
     </task>
     <servers />
   </component>
@@ -131,13 +133,6 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/oneboxTask/onebox_main.py</url>
-          <line>211</line>
-          <option name="timeStamp" value="30" />
-        </line-breakpoint>
-      </breakpoints>
       <default-breakpoints>
         <breakpoint type="python-exception">
           <properties notifyOnTerminate="true" exception="BaseException">

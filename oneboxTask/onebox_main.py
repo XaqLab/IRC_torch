@@ -21,23 +21,6 @@ import numdifftools as nd
 
 
 def likelihood_tensor(food_missed, app_rate, disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature):
-    # app_rate = torch.autograd.Variable(torch.tensor([app_rate]),requires_grad=True)
-    # disapp_rate = torch.autograd.Variable(torch.tensor([disapp_rate]),requires_grad=True)
-    # food_missed = torch.autograd.Variable(torch.tensor([food_missed]),requires_grad=True) #0
-    # food_consumed = torch.autograd.Variable(torch.tensor([food_consumed]),requires_grad=True) #.99 #1
-    # belief_diffusion = torch.autograd.Variable(torch.tensor([belief_diffusion]),requires_grad=True) #.1
-    # policy_temperature = torch.autograd.Variable(torch.tensor([policy_temperature]),requires_grad=True) #.061
-    # push_button_cost = torch.autograd.Variable(torch.tensor([push_button_cost]),requires_grad=True) #.3
-
-    # app_rate = app_rate.detach().numpy()[0]
-    # disapp_rate = disapp_rate.detach().numpy()[0]
-    # food_missed = food_missed.detach().numpy()[0]
-    # food_consumed = food_consumed.detach().numpy()[0]
-    # belief_diffusion = belief_diffusion.detach().numpy()[0]
-    # policy_temperature = policy_temperature.detach().numpy()[0]
-    # push_button_cost = push_button_cost.detach().numpy()[0]
-
-    #print(app_rate, disapp_rate, food_missed, food_consumed, belief_diffusion, policy_temperature, push_button_cost)
 
     app_rate_experiment = .3
     disapp_rate_experiment = .1
@@ -79,32 +62,26 @@ def likelihood_tensor(food_missed, app_rate, disapp_rate, food_consumed, push_bu
     # rewN = obsN[:, :, 1]
 
     """
-    IRC
+    maximum log-likelihood
     """
     # obs = np.squeeze(obsN)
     obs = np.squeeze(obsN)[:10, :]
     #
-    # pointIni = list(parameters_agent.values())
-    # point_all = [np.array(pointIni) + (np.random.rand(len(pointIni)) * 2 - 1) * 0.001 * 0,
-    #              np.array(pointIni) + (np.random.rand(len(pointIni)) * 2 - 1) * 0.001 * 0]
-
-    #log_likelihood_all = [-10 ** 6, -10 ** 6]
-
-    #p_last = parameters_agent.copy()
-    #
     pi = torch.ones(nq) / nq
+    # pi[0].backward()
+    # food_missed.grad
     onebox_temp = oneboxMDP(discount, nq, nr, na, parameters_agent)
     onebox_temp.setupMDP()
     onebox_temp.solveMDP_sfm()
     ThA = onebox_temp.ThA
     softpolicy = onebox_temp.softpolicy
     #print(softpolicy)
-    #oneboxHMM = HMMonebox(ThA, softpolicy, pi)
-    #log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
+    oneboxHMM = HMMonebox(ThA, softpolicy, pi)
+    log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
 
     #return log_likelihood.clone().detach().requires_grad_(True)
 
-    return torch.sum(vi)
+    return log_likelihood
 
 def main():
     start_time = time.time()
@@ -210,10 +187,10 @@ def main():
     ll.backward()
     print(food_missed.grad)
     #
-    oneboxd = oneboxMDPder(discount, nq, nr, na, p_last)
-    oneboxd1st = oneboxd.dloglikelihhod_dpara_sim(obs)
-    print('The current gradient is', oneboxd1st)
-    print(time.time() - start_time)
+    # oneboxd = oneboxMDPder(discount, nq, nr, na, p_last)
+    # oneboxd1st = oneboxd.dloglikelihhod_dpara_sim(obs)
+    # print('The current gradient is', oneboxd1st)
+    # print(time.time() - start_time)
 
     #IRC_monkey = onebox_IRC(discount, nq, nr, na, point_all, log_likelihood_all)
 
