@@ -2,14 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="df70ce86-e03a-449b-8a9a-e165588d1986" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/utils/util.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Untitled.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Untitled.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_HMM.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_HMM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/MDPclass.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/MDPclass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/boxtask_func.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/boxtask_func.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +68,7 @@
       <option name="presentableId" value="Default" />
       <updated>1604595234088</updated>
       <workItem from="1604595235446" duration="47465000" />
-      <workItem from="1605641402186" duration="699000" />
+      <workItem from="1605641402186" duration="1053000" />
     </task>
     <servers />
   </component>

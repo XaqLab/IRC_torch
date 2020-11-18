@@ -203,6 +203,7 @@ def main():
 
     #print("gradient")
     ll = likelihood_tensor(food_missed, app_rate, disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature)
+
     #print(ll)
     #food_missed.retain_grad()
     #para = [food_missed, app_rate, disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature]
