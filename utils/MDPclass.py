@@ -2,7 +2,7 @@
 import math as _math
 import time as _time
 
-import torch as _torch
+import torch as torch
 import numpy as _np
 import scipy.sparse as _sp
 
@@ -105,11 +105,13 @@ class MDP(object):
         # that you know they define a valid MDP before calling the
         # _bellmanOperator method. Otherwise the results will be meaningless.
         #Q = _np.empty((self.A, self.S))
-        Q = _torch.empty(self.A, self.S)
+        #Q = torch.empty(self.A, self.S)
+        Q = []
         for aa in range(self.A):
             ### Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
-            Q[aa] = self.R[aa] + self.discount * self.P[aa].matmul(V)
-
+            #Q[aa] = self.R[aa] + self.discount * self.P[aa].matmul(V)
+            Q.append(self.R[aa] + self.discount * self.P[aa].matmul(V))
+        Q = torch.stack(Q)
         # Get the policy and value, for now it is being returned but...
         # Which way is better?
         # 1. Return, (policy, value)
@@ -146,10 +148,13 @@ class MDP(object):
         # that you know they define a valid MDP before calling the
         # _bellmanOperator method. Otherwise the results will be meaningless.
         ### Q = _np.empty((self.A, self.S))
-        Q = _torch.empty(self.A, self.S)
+        #Q = torch.empty(self.A, self.S)
+        Q = []
         for aa in range(self.A):
             ### Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
-            Q[aa] = self.R[aa] + self.discount * self.P[aa].matmul(V)
+            #Q[aa] = self.R[aa] + self.discount * self.P[aa].matmul(V)
+            Q.append(self.R[aa] + self.discount * self.P[aa].matmul(V))
+        Q = torch.stack(Q)
 
         # Get the policy and value, for now it is being returned but...
         # Which way is better?
@@ -157,24 +162,25 @@ class MDP(object):
 
         ### expo = _np.zeros(Q.shape)
         ### softpolicy = _np.zeros(Q.shape)
-        expo = _torch.zeros(Q.shape)
-        softpolicy = _torch.zeros(Q.shape)
-
-
-        for i in range(self.S):
-            ###expo[:, i] = _np.exp(Q[:, i] / temperature)
-            ### expo[:, i] = expo[:, i] / _np.max(expo[:, i])    # divide all the exp value with the max,
-            ###                                                  # allow the softpolicy approximate the optimal policy closely
-            ### softpolicy[:, i] = expo[:, i] / _np.sum(expo[:, i])
-
-            expo[:, i] = _torch.exp(Q[:, i] / temperature)     # IN TORCH, THE TEMPERATURE CANNOT BE TOO SMALL
-            expo[:, i] = expo[:, i] / _torch.max(expo[:, i])  # divide all the exp value with the max,
-            # allow the softpolicy approximate the optimal policy closely
-            softpolicy[:, i] = expo[:, i] / _torch.sum(expo[:, i])
-
+        # expo = torch.zeros(Q.shape)
+        # softpolicy = torch.zeros(Q.shape)
+        #
+        # for i in range(self.S):
+        #     ###expo[:, i] = _np.exp(Q[:, i] / temperature)
+        #     ### expo[:, i] = expo[:, i] / _np.max(expo[:, i])    # divide all the exp value with the max,
+        #     ###                                                  # allow the softpolicy approximate the optimal policy closely
+        #     ### softpolicy[:, i] = expo[:, i] / _np.sum(expo[:, i])
+        #
+        #     expo[:, i] = torch.exp(Q[:, i] / temperature)     # IN TORCH, THE TEMPERATURE CANNOT BE TOO SMALL
+        #     expo[:, i] = expo[:, i] / torch.max(expo[:, i])  # divide all the exp value with the max,
+        #     # allow the softpolicy approximate the optimal policy closely
+        #     softpolicy[:, i] = expo[:, i] / torch.sum(expo[:, i])
+        expQ =  torch.exp(Q / temperature)
+        expQ = expQ / expQ.max(dim = 0)[0]
+        softpolicy = expQ / expQ.sum(dim = 0)
 
         ###return (softpolicy, _np.sum(Q * softpolicy, axis = 0))
-        return (softpolicy, _torch.sum(Q * softpolicy, axis=0))
+        return (softpolicy, torch.sum(Q * softpolicy, axis=0))
 
         # 2. update self.policy and self.V directly
         # self.V = Q.max(axis=1)
@@ -218,7 +224,7 @@ class MDP(object):
             raise NotImplementedError
         else:
             ###r = _np.array(reward).reshape(self.S)
-            r = _torch.tensor(reward).reshape(self.S)
+            r = torch.tensor(reward).reshape(self.S)
             return tuple(r for a in range(self.A))
 
     def _computeArrayReward(self, reward):
@@ -226,7 +232,7 @@ class MDP(object):
             raise NotImplementedError
         else:
             ###func = lambda x: _np.array(x).reshape(self.S)
-            func = lambda x: _torch.tensor(x).reshape(self.S)
+            func = lambda x: torch.tensor(x).reshape(self.S)
             return tuple(func(reward[:, a]) for a in range(self.A))
 
     def _computeMatrixReward(self, reward, transition):
@@ -240,7 +246,7 @@ class MDP(object):
             return transition.multiply(reward).sum(1).state_transition.reshape(self.S)
         else:
             ###return _np.multiply(transition, reward).sum(1).reshape(self.S)
-            return _torch.multiply(transition, reward).sum(1).reshape(self.S)
+            return torch.multiply(transition, reward).sum(1).reshape(self.S)
 
     def run(self):
         # Raise error because child classes should implement this function.
@@ -384,7 +390,7 @@ class ValueIteration_sfmZW(MDP):
         # initialization of optional arguments
         if initial_value == 0:
             ###self.V = _np.zeros(self.S)
-            self.V = _torch.zeros(self.S)
+            self.V = torch.zeros(self.S)
 
         else:
             assert len(initial_value) == self.S, "The initial value must be " \
@@ -429,11 +435,11 @@ class ValueIteration_sfmZW(MDP):
         #     s,a,s',a'       j
         k = 0
         ###h = _np.zeros(self.S)
-        h = _torch.zeros(self.S)
+        h = torch.zeros(self.S)
 
         for ss in range(self.S):
             ###PP = _np.zeros((self.A, self.S))
-            PP = _torch.zeros(self.A, self.S)
+            PP = torch.zeros(self.A, self.S)
             for aa in range(self.A):
                 try:
                     PP[aa] = self.P[aa][:, ss]
@@ -628,7 +634,7 @@ class ValueIteration_opZW(MDP):
         # initialization of optional arguments
         if initial_value == 0:
             ###self.V = _np.zeros(self.S)
-            self.V = _torch.zeros(self.S)
+            self.V = torch.zeros(self.S)
 
         else:
             assert len(initial_value) == self.S, "The initial value must be " \
@@ -672,11 +678,11 @@ class ValueIteration_opZW(MDP):
         #     s,a,s',a'       j
         k = 0
         ###h = _np.zeros(self.S)
-        h = _torch.zeros(self.S)
+        h = torch.zeros(self.S)
 
         for ss in range(self.S):
             ###PP = _np.zeros((self.A, self.S))
-            PP = _torch.zeros(self.A, self.S)
+            PP = torch.zeros(self.A, self.S)
             for aa in range(self.A):
                 try:
                     PP[aa] = self.P[aa][:, ss]

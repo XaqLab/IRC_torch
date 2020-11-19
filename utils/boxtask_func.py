@@ -71,45 +71,45 @@ def tensorkronn(*args):
 
 
 
-def beliefTransitionMatrix(p_appear, p_disappear, nq, w):
-    """
-    create transition matrix between nq belief states q to q'
-    :param p_appear:
-    :param p_disappear:
-    :param nq:
-    :param w: width of diffusive noise
-    :return:
-    """
-    Tqqq = np.zeros((nq, nq))
-    dq = 1 / nq
-    a = 1 - p_disappear - p_appear
-
-    for i in range(nq):
-        for j in range(nq):
-            q = i * dq
-            qq = j * dq
-
-            bm = (qq - p_appear) / a
-            bp = (qq + dq - p_appear) / a
-
-            Tqqq[j, i] = max(0, min(q + dq, bp) - max(q, bm) )
-            Tqqq[j, i] = Tqqq[j, i] / (bp - bm) * sqrt(dq ** 2 + (bp - bm) ** 2)
-    # Tqqq = Tqqq / np.tile(np.sum(Tqqq, 0), (nq, 1))
-    Tqqq = Tqqq / torch.sum(Tqqq, 0).repeat((nq, 1))
-
-    nt = 20
-    d = w / nt
-    dD = toeplitz(np.insert(np.zeros(nq - 2), 0, np.array([-2 * d, d])))
-    dD[1, 0] = 2 * d
-    dD[-2, -1] = 2 * d
-    D = expm(dD * nt)
-    D = D / np.tile(np.sum(D, 0), (nq, 1))
-    D = torch.from_numpy(D)
-    ###Tqqq = np.dot(D, Tqqq)
-    Tqqq = torch.mm(D, Tqqq)
-
-    return Tqqq
-
+# def beliefTransitionMatrix(p_appear, p_disappear, nq, w):
+#     """
+#     create transition matrix between nq belief states q to q'
+#     :param p_appear:
+#     :param p_disappear:
+#     :param nq:
+#     :param w: width of diffusive noise
+#     :return:
+#     """
+#     Tqqq = np.zeros((nq, nq))
+#     dq = 1 / nq
+#     a = 1 - p_disappear - p_appear
+#
+#     for i in range(nq):
+#         for j in range(nq):
+#             q = i * dq
+#             qq = j * dq
+#
+#             bm = (qq - p_appear) / a
+#             bp = (qq + dq - p_appear) / a
+#
+#             Tqqq[j, i] = max(0, min(q + dq, bp) - max(q, bm) )
+#             Tqqq[j, i] = Tqqq[j, i] / (bp - bm) * sqrt(dq ** 2 + (bp - bm) ** 2)
+#     # Tqqq = Tqqq / np.tile(np.sum(Tqqq, 0), (nq, 1))
+#     Tqqq = Tqqq / torch.sum(Tqqq, 0).repeat((nq, 1))
+#
+#     nt = 20
+#     d = w / nt
+#     dD = toeplitz(np.insert(np.zeros(nq - 2), 0, np.array([-2 * d, d])))
+#     dD[1, 0] = 2 * d
+#     dD[-2, -1] = 2 * d
+#     D = expm(dD * nt)
+#     D = D / np.tile(np.sum(D, 0), (nq, 1))
+#     D = torch.from_numpy(D)
+#     ###Tqqq = np.dot(D, Tqqq)
+#     Tqqq = torch.mm(D, Tqqq)
+#
+#     return Tqqq
+#
 
 def beliefTransitionMatrixGaussian(p_appear, p_disappear, nq, sigma):
     # mu = 0
@@ -143,69 +143,69 @@ def beliefTransitionMatrixGaussian(p_appear, p_disappear, nq, sigma):
 
     return Tb
 
-def beliefTransitionMatrixGaussianCol(p_appear, p_disappear, qmin, qmax, Ncol, nq):
-    def gb(x, k1, k0, p_appear, p_disappear):
-        a = 1 - p_disappear - p_appear
-        return (k1 * a * x + k1 * p_appear) / ((k1 - k0) * a * x + k1 * p_appear + k0 * (1 - p_appear))
-
-    def gbinv(y, k1, k0, p_appear, p_disappear):
-        a = 1 - p_disappear - p_appear
-        return (y * (k1 * p_appear + k0 * (1 - p_appear)) - k1 * p_appear) / (k1 * a - y * (k1 - k0) * a)
-
-    mu = 0
-
-    Trans_state = np.array([[1 - p_appear, p_disappear],
-                            [p_appear, 1 - p_disappear]])
-    Obs_emis = np.zeros((Ncol + 1, 2))  # Observation(color) generation
-    Obs_emis[:, 0] = binom.pmf(range(Ncol + 1), Ncol, qmax)
-    Obs_emis[:, 1] = binom.pmf(range(Ncol + 1), Ncol, qmin)
-
-    dq = 1 / nq
-
-    d = np.zeros((Ncol + 1, nq, nq))
-    den = np.zeros((Ncol + 1, nq, nq))
-    xopt = np.zeros((Ncol + 1, nq, nq))
-    height = np.zeros((Ncol + 1, nq, nq))
-    Trans_belief_obs_approx = np.zeros((Ncol + 1, nq, nq))
-
-    for n in range(Ncol + 1):
-        k0 = Obs_emis[n, 0]
-        k1 = Obs_emis[n, 1]
-
-        for i in range(nq):
-            for j in range(nq):
-                # xmin = dq * i
-                # xmax = dq * (i + 1)
-                # ymin = dq * j
-                # ymax = dq * (j + 1)
-                #
-                # bl = max(gbinv(ymin, k1, k0, p_appear, p_disappear), xmin)
-                # br = min(gbinv(ymax, k1, k0, p_appear, p_disappear), xmax)
-                #
-                # if bl > br:
-                #     Trans_belief_obs[n, j, i] = 0
-                # else:
-                #     Trans_belief_obs[n, j, i] = \
-                #     quad(lambda x: Obs_emis[n, :].dot(Trans_state).dot(np.array([1 - x, x])),
-                #         bl, br)[0]
-
-                # Approximate the probability with Gaussian approxiamtion
-                q = i * dq + dq / 2
-                qq = j * dq + dq / 2
-
-                def dist(x):
-                    return sqrt((q - x) ** 2 + (qq - gb(x, k1, k0, p_appear, p_disappear)) ** 2)
-
-                xopt[n, j, i], d[n, j, i] = optimize.fminbound(dist, 0, 1, full_output=1)[0:2]
-                den[n, j, i] = norm.pdf(d[n, j, i], mu, 1 / nq / 3)   # use this to approximate delta function with diffusion
-
-                height[n, j, i] = Obs_emis[n, :].dot(Trans_state).dot(np.array([1 - xopt[n, j, i], xopt[n, j, i]]))
-
-        den[n] = den[n] / np.tile(np.sum(den[n], 0), (nq, 1))
-        Trans_belief_obs_approx[n] = np.multiply(den[n], height[n])
-
-    return Trans_belief_obs_approx, Obs_emis.dot(Trans_state), den
-
+# def beliefTransitionMatrixGaussianCol(p_appear, p_disappear, qmin, qmax, Ncol, nq):
+#     def gb(x, k1, k0, p_appear, p_disappear):
+#         a = 1 - p_disappear - p_appear
+#         return (k1 * a * x + k1 * p_appear) / ((k1 - k0) * a * x + k1 * p_appear + k0 * (1 - p_appear))
+#
+#     def gbinv(y, k1, k0, p_appear, p_disappear):
+#         a = 1 - p_disappear - p_appear
+#         return (y * (k1 * p_appear + k0 * (1 - p_appear)) - k1 * p_appear) / (k1 * a - y * (k1 - k0) * a)
+#
+#     mu = 0
+#
+#     Trans_state = np.array([[1 - p_appear, p_disappear],
+#                             [p_appear, 1 - p_disappear]])
+#     Obs_emis = np.zeros((Ncol + 1, 2))  # Observation(color) generation
+#     Obs_emis[:, 0] = binom.pmf(range(Ncol + 1), Ncol, qmax)
+#     Obs_emis[:, 1] = binom.pmf(range(Ncol + 1), Ncol, qmin)
+#
+#     dq = 1 / nq
+#
+#     d = np.zeros((Ncol + 1, nq, nq))
+#     den = np.zeros((Ncol + 1, nq, nq))
+#     xopt = np.zeros((Ncol + 1, nq, nq))
+#     height = np.zeros((Ncol + 1, nq, nq))
+#     Trans_belief_obs_approx = np.zeros((Ncol + 1, nq, nq))
+#
+#     for n in range(Ncol + 1):
+#         k0 = Obs_emis[n, 0]
+#         k1 = Obs_emis[n, 1]
+#
+#         for i in range(nq):
+#             for j in range(nq):
+#                 # xmin = dq * i
+#                 # xmax = dq * (i + 1)
+#                 # ymin = dq * j
+#                 # ymax = dq * (j + 1)
+#                 #
+#                 # bl = max(gbinv(ymin, k1, k0, p_appear, p_disappear), xmin)
+#                 # br = min(gbinv(ymax, k1, k0, p_appear, p_disappear), xmax)
+#                 #
+#                 # if bl > br:
+#                 #     Trans_belief_obs[n, j, i] = 0
+#                 # else:
+#                 #     Trans_belief_obs[n, j, i] = \
+#                 #     quad(lambda x: Obs_emis[n, :].dot(Trans_state).dot(np.array([1 - x, x])),
+#                 #         bl, br)[0]
+#
+#                 # Approximate the probability with Gaussian approxiamtion
+#                 q = i * dq + dq / 2
+#                 qq = j * dq + dq / 2
+#
+#                 def dist(x):
+#                     return sqrt((q - x) ** 2 + (qq - gb(x, k1, k0, p_appear, p_disappear)) ** 2)
+#
+#                 xopt[n, j, i], d[n, j, i] = optimize.fminbound(dist, 0, 1, full_output=1)[0:2]
+#                 den[n, j, i] = norm.pdf(d[n, j, i], mu, 1 / nq / 3)   # use this to approximate delta function with diffusion
+#
+#                 height[n, j, i] = Obs_emis[n, :].dot(Trans_state).dot(np.array([1 - xopt[n, j, i], xopt[n, j, i]]))
+#
+#         den[n] = den[n] / np.tile(np.sum(den[n], 0), (nq, 1))
+#         Trans_belief_obs_approx[n] = np.multiply(den[n], height[n])
+#
+#     return Trans_belief_obs_approx, Obs_emis.dot(Trans_state), den
+#
 
 # def beliefTransitionMatrixGaussianDerivative(p_appear, p_disappear, nq, sigma=0.1):
 #     mu = 0
@@ -472,30 +472,30 @@ i    '''
 
 
 
-def tensorsum(A, B):
-    ra, ca = A.shape
-    rb, cb = B.shape
-    C = np.empty((ra * rb, ca * cb))
-
-    for i in range(ra):
-        for j in range(ca):
-            C[i*rb : (i+1)*rb, j*cb : (j+1)*cb] = A[i, j] + B
-
-    return C
-
-
-def tensorsumm(*args):
-    '''
-    :param args:
-    :return: returns multidimensional kronecker sum of all matrices in list
-    Note that the args must be two-dimensional. When any of the ars is a vector, need to pass in a
-i    '''
-    z = args[0]
-    for i in range(1, len(args)):
-        z = tensorsum(z, args[i])
-
-    return z
-
+# def tensorsum(A, B):
+#     ra, ca = A.shape
+#     rb, cb = B.shape
+#     C = np.empty((ra * rb, ca * cb))
+#
+#     for i in range(ra):
+#         for j in range(ca):
+#             C[i*rb : (i+1)*rb, j*cb : (j+1)*cb] = A[i, j] + B
+#
+#     return C
+#
+#
+# def tensorsumm(*args):
+#     '''
+#     :param args:
+#     :return: returns multidimensional kronecker sum of all matrices in list
+#     Note that the args must be two-dimensional. When any of the ars is a vector, need to pass in a
+# i    '''
+#     z = args[0]
+#     for i in range(1, len(args)):
+#         z = tensorsum(z, args[i])
+#
+#     return z
+#
 
 # def softmax(x, t):
 #     # transform the value of a vector x to softmax

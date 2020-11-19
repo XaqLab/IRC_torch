@@ -76,12 +76,12 @@ def likelihood_tensor(food_missed, app_rate, disapp_rate, food_consumed, push_bu
     ThA = onebox_temp.ThA
     softpolicy = onebox_temp.softpolicy
     #print(softpolicy)
-    oneboxHMM = HMMonebox(ThA, softpolicy, pi)
-    log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
+    #oneboxHMM = HMMonebox(ThA, softpolicy, pi)
+    #log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
 
     #return log_likelihood.clone().detach().requires_grad_(True)
 
-    return log_likelihood
+    return softpolicy #log_likelihood
 
 def main():
     start_time = time.time()
@@ -184,7 +184,7 @@ def main():
     print(ll)
     #food_missed.retain_grad()
     #para = [food_missed, app_rate, disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature]
-    ll.backward()
+    ll[0, 0].backward()
     print(food_missed.grad)
 
     #
