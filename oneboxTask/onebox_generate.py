@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 import numpy as np
 
-def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr, na, discount,
+def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr, na, nl, discount,
                 policy, belief_ini=0, rew_ini=0):
 
     datestring = datetime.strftime(datetime.now(), '%m%d%Y(%H%M)')   # current time used to set file name
@@ -16,7 +16,6 @@ def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
     push_button_cost = parameters['push_button_cost']
     belief_diffusion = parameters['belief_diffusion']
     policy_temperature = parameters['policy_temperature']
-    reward = 1
 
     app_rate_experiment = parameters_exp['app_rate_experiment']
     disapp_rate_experiment = parameters_exp['disapp_rate_experiment']
@@ -25,7 +24,7 @@ def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
     print("\nGenerating data...")
     T = sample_length
     N = sample_number
-    oneboxdata = onebox_generate(discount, nq, nr, na, parameters, parameters_exp, T, N)
+    oneboxdata = onebox_generate(discount, nq, nr, na, nl, parameters, parameters_exp, T, N)
     oneboxdata.data_generate(policy, belief_ini, rew_ini)  # softmax policy
 
     belief = oneboxdata.belief
@@ -59,7 +58,6 @@ def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
                  'app_rate': app_rate,
                  'disapp_rate': disapp_rate,
                  'food_consumed': food_consumed,
-                 'reward': reward,
                  'push_button_cost': push_button_cost,
                  'app_rate_experiment': app_rate_experiment,
                  'disapp_rate_experiment': disapp_rate_experiment
@@ -80,9 +78,9 @@ class onebox_generate(oneboxMDP):
     This class generates the data based on the object oneboxMDP. The parameters, and thus the transition matrices and
     the rewrd function, are shared for the oneboxMDP and this data generator class.
     """
-    def __init__(self, discount, nq, nr, na, parameters, parameters_exp,
+    def __init__(self, discount, nq, nr, na, nl, parameters, parameters_exp,
                  sampleTime, sampleNum):
-        oneboxMDP.__init__(self, discount, nq, nr, na, parameters)
+        oneboxMDP.__init__(self, discount, nq, nr, na, nl, parameters)
 
         self.parameters_exp = parameters_exp
         self.sampleNum = sampleNum

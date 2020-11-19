@@ -23,16 +23,17 @@ class oneboxMDP:
     model onebox problem, set up the transition matrices and reward based on the given parameters,
     and solve the MDP problem, return the optimal policy
     """
-    def __init__(self, discount, nq, nr, na, parameters):
+    def __init__(self, discount, nq, nr, na, nl, parameters):
         self.discount = discount
         self.nq = nq
         self.nr = nr
         self.na = na
-        self.n = self.nq * self.nr  # total number of states
+        self.nl = nl
+        self.n = (self.nq ** self.nl) * self.nr  # total number of states
         self.parameters = parameters
-        self.ThA = []  #torch.empty(self.na, self.n, self.n)
+        self.ThA = []   #torch.empty(self.na, self.n, self.n)
         self.ThA_t = [] #torch.zeros(self.na, self.n, self.n)
-        self.R = []  #torch.zeros(self.na, self.n, self.n)
+        self.R = []     #torch.zeros(self.na, self.n, self.n)
 
     def setupMDP(self):
         """
