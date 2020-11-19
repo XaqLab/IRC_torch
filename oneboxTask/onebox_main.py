@@ -35,6 +35,7 @@ def likelihood_tensor(food_missed, app_rate, disapp_rate, food_consumed, push_bu
                         'policy_temperature': policy_temperature
                         }
     parameters_agent = collections.OrderedDict(sorted(parameters_agent.items()))
+    #print(parameters_agent.keys())
 
     parameters_exp = {'app_rate_experiment': app_rate_experiment,
                       'disapp_rate_experiment': disapp_rate_experiment
@@ -76,12 +77,22 @@ def likelihood_tensor(food_missed, app_rate, disapp_rate, food_consumed, push_bu
     ThA = onebox_temp.ThA
     softpolicy = onebox_temp.softpolicy
     #print(softpolicy)
-    #oneboxHMM = HMMonebox(ThA, softpolicy, pi)
-    #log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
+    oneboxHMM = HMMonebox(ThA, softpolicy, pi)
+    #alpha = oneboxHMM.forward(obs)
+    #beta = oneboxHMM.backward(obs)
+
+    #alpha, scale = oneboxHMM.forward_scale(obs)
+    #beta = oneboxHMM.backward_scale(obs, scale)
+    #xi = oneboxHMM.compute_xi(alpha, beta, obs)
+    #lat_ent = oneboxHMM.latent_entr(obs)
+    #print(lat_ent)
+    log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
+    #print(log_likelihood)
+    #print(1)
 
     #return log_likelihood.clone().detach().requires_grad_(True)
 
-    return softpolicy #log_likelihood
+    return log_likelihood
 
 def main():
     start_time = time.time()
@@ -184,9 +195,16 @@ def main():
     print(ll)
     #food_missed.retain_grad()
     #para = [food_missed, app_rate, disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature]
-    ll[0, 0].backward()
-    print(food_missed.grad)
-
+    ll.backward()
+    print(app_rate.grad,
+          belief_diffusion.grad,
+          disapp_rate.grad,
+          food_consumed.grad,
+          food_missed.grad,
+          policy_temperature.grad,
+          push_button_cost.grad
+          )
+    print(time.time() - start_time)
     #
     # oneboxd = oneboxMDPder(discount, nq, nr, na, p_last)
     # oneboxd1st = oneboxd.dloglikelihhod_dpara_sim(obs)
