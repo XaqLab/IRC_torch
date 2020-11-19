@@ -112,23 +112,31 @@ def beliefTransitionMatrix(p_appear, p_disappear, nq, w):
 
 
 def beliefTransitionMatrixGaussian(p_appear, p_disappear, nq, sigma):
-    mu = 0
+    # mu = 0
+    #
+    # # d = np.zeros((nq, nq))
+    # # Trrr = np.zeros((nq, nq))
+    # d = torch.zeros(nq, nq)
+    # Trrr = torch.zeros(nq, nq)
+    # dq = 1 / nq
+    # a = 1 - p_disappear - p_appear
+    #
+    # for i in range(nq):
+    #     for j in range(nq):
+    #         q = i * dq + dq / 2
+    #         qq = j * dq + dq / 2
+    #
+    #         d[j, i] = abs(a * q - qq + p_appear) / sqrt(a ** 2 + 1)
+    #         Trrr[j, i] = 1/torch.sqrt(2*math.pi) / sigma * torch.exp(-1/2 * ((d[j, i] - mu) / sigma) ** 2 )
+    #         #norm.pdf(d[j, i], mu, sigma)
 
-    # d = np.zeros((nq, nq))
-    # Trrr = np.zeros((nq, nq))
-    d = torch.zeros(nq, nq)
-    Trrr = torch.zeros(nq, nq)
     dq = 1 / nq
+    mu = 0
+    q = (torch.arange(nq) * dq + dq / 2).repeat((nq, 1))
+    qq = q.t()
     a = 1 - p_disappear - p_appear
-
-    for i in range(nq):
-        for j in range(nq):
-            q = i * dq + dq / 2
-            qq = j * dq + dq / 2
-
-            d[j, i] = abs(a * q - qq + p_appear) / sqrt(a ** 2 + 1)
-            Trrr[j, i] = 1/np.sqrt(2*math.pi) / sigma * math.exp(-1/2 * ((d[j, i] - mu) / sigma) ** 2 )
-            #norm.pdf(d[j, i], mu, sigma)
+    d = torch.abs(a * q - qq + p_appear * torch.ones(nq)) / torch.sqrt(a ** 2 + 1)
+    Trrr = 1 / torch.sqrt(torch.tensor([2 * math.pi])) / sigma * torch.exp(-1 / 2 * ((d - mu) / sigma) ** 2)
 
     #Tb = Trrr / np.tile(np.sum(Trrr, 0), (nq, 1))
     Tb = Trrr / torch.sum(Trrr, 0).repeat((nq, 1))
