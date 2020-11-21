@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 
 def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr, na, nl, discount,
-                policy, belief_ini=0, rew_ini=0):
+                policy, belief_ini, rew_ini):
 
     datestring = datetime.strftime(datetime.now(), '%m%d%Y(%H%M)')   # current time used to set file name
 
@@ -54,6 +54,7 @@ def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
                  'nq': nq,
                  'nr': nr,
                  'na': na,
+                 'nl': nl,
                  'food_missed': food_missed,
                  'app_rate': app_rate,
                  'disapp_rate': disapp_rate,
@@ -112,6 +113,11 @@ class onebox_generate(oneboxMDP):
         app_rate_experiment = self.parameters_exp['app_rate_experiment']
         disapp_rate_experiment = self.parameters_exp['disapp_rate_experiment']
 
+        if rew_ini == 'rand':
+            rew_ini = torch.randint(self.nr, (1,))
+        if belief_ini == 'rand':
+            belief_ini = torch.randint(self.nq, (1,))
+
         for i in range(self.sampleNum):
             for t in range(self.sampleTime):
                 if t == 0:
@@ -121,10 +127,10 @@ class onebox_generate(oneboxMDP):
                     if policy == 'opt':
                         self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
                     elif policy == 'sfm':
-                        self.action[i, t] = self._choose_action(np.vstack(self.softpolicy).T[self.hybrid[i, t]])
+                        self.action[i, t] = self._choose_action(np.vstack(self.softpolicy.detach().numpy()).T[self.hybrid[i, t]])
                 else:
                     if self.action[i, t - 1] != pb:
-                        stattemp = np.random.multinomial(1, self.ThA[self.action[i, t - 1], self.hybrid[i, t - 1], :],
+                        stattemp = np.random.multinomial(1, self.ThA[self.action[i, t - 1], self.hybrid[i, t - 1], :].detach().numpy(),
                                                          size=1)
                         self.hybrid[i, t] = np.argmax(stattemp)
                         self.reward[i, t], self.belief[i, t] = divmod(self.hybrid[i, t], self.nq)
@@ -148,16 +154,16 @@ class onebox_generate(oneboxMDP):
                             if self.reward[i, t - 1] == 0:
                                 self.reward[i, t] = 0
                             else:
-                                self.reward[i, t] = np.random.binomial(1, 1 - food_consumed)
+                                self.reward[i, t] = np.random.binomial(1, 1 - food_consumed.detach().numpy())
                         else:
-                            self.trueState[i, t] = np.random.binomial(1, food_missed)
+                            self.trueState[i, t] = np.random.binomial(1, food_missed.detach().numpy())
 
                             if self.trueState[i, t] == 1:  # is dropped back after bp
                                 self.belief[i, t] = self.nq - 1
                                 if self.reward[i, t - 1] == 0:
                                     self.reward[i, t] = 0
                                 else:
-                                    self.reward[i, t] = np.random.binomial(1, 1 - food_consumed)
+                                    self.reward[i, t] = np.random.binomial(1, 1 - food_consumed.detach().numpy())
                             else:  # not dropped back
                                 self.belief[i, t] = 0
                                 self.reward[i, t] = 1  # give some reward
@@ -167,7 +173,7 @@ class onebox_generate(oneboxMDP):
                     if policy == 'opt':
                         self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
                     elif policy == 'sfm':
-                        self.action[i, t] = self._choose_action(np.vstack(self.softpolicy).T[self.hybrid[i, t]])
+                        self.action[i, t] = self._choose_action(np.vstack(self.softpolicy.detach().numpy()).T[self.hybrid[i, t]])
 
     # def data_generate_op(self, belief_ini = 0, rew_ini = 0):
     #     """

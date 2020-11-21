@@ -152,7 +152,7 @@ class oneboxMDP:
         self.Q = self._QfromV(vi)   # shape na * number of state, use value to calculate Q value
 
         #self.optpolicy = np.array(vi.policy)
-        self.optpolicy = torch.tensor(vi.policy)
+        self.optpolicy = vi.policy
 
         ## policy iteration
         #latent_ini = mdp.ValueIteration(self.ThA, self.R, self.discount, epsilon, niterations)

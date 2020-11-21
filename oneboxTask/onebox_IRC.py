@@ -6,72 +6,74 @@ from sklearn import random_projection
 import matplotlib.pyplot as plt
 
 class onebox_IRC():
-    def __init__(self, discount, nq, nr, na, parametersInit, LLInit):
+    def __init__(self, discount, nq, nr, na, nl, parametersInit, LLInit):
         self.discount = discount
         self.nq = nq
         self.nr = nr
         self.na = na
-        self.n = self.nq * self.nr   # total number of states
+        self.nl = nl
+        self.n = (self.nq ** self.nl) * self.nr   # total number of states
         self.point_all = parametersInit.copy()   # List of parameters
         self.log_likelihood_all = LLInit.copy()  # List of likelihood
 
-    def IRC_randomProj(self, obs, randProjNum = 1):
-        for l in range(randProjNum):
-            transformer = random_projection.GaussianRandomProjection(n_components=2)
-            transformer.fit_transform(self.point_all)
-            projectionMatRand = transformer.components_
-            print(projectionMatRand)
-
-            # Contour of the likelihood
-            step1 = 0.004  # for u (1st principle component)
-            step2 = 0.004  # for v (2nd principle component)
-            N1 = 4
-            N2 = 4
-            uOffset = - step1 * N1 / 2
-            vOffset = - step2 * N2 / 2
-
-            uValue = np.zeros(N1)
-            vValue = np.zeros(N2)
-            Qaux1 = np.zeros((N2, N1))  # Likelihood with ground truth latent
-            Qaux2 = np.zeros((N2, N1))  # Expected complete data likelihood
-            Qaux3 = np.zeros((N2, N1))  # Entropy of latent posterior
-            para_slice = []
-            LL_slice = []
-
-            for i in range(N1):
-                uValue[i] = step1 * (i) + uOffset
-                for j in range(N2):
-                    vValue[j] = step2 * (j) + vOffset
-
-                    para_slicePoints = self.point_all[-1] + uValue[i] * projectionMatRand[0] + \
-                                       vValue[j] * projectionMatRand[1]
-                    para_slice.append(para_slicePoints)
-                    para = np.copy(para_slicePoints)
-                    # para[2] = 0
-                    # para[3] = 0
-
-                    onebox = oneboxMDP(self.discount, self.nq, self.nr, self.na, para)
-                    onebox.setupMDP()
-                    onebox.solveMDP_sfm()
-                    ThA = onebox.ThA
-                    softpolicy = onebox.softpolicy
-                    pi = np.ones(self.nq) / self.nq   # initialize the estimation of the belief state
-                    onebpx_HMM = HMMonebox(ThA, softpolicy, pi)
-
-                    # Qaux1[j, i] = oneboxHMM.likelihood(lat, obs, ThA, policy)  #given latent state
-                    Qaux2[j, i] = onebpx_HMM.computeQaux(obs, ThA, softpolicy)
-                    Qaux3[j, i] = onebpx_HMM.latent_entr(obs)
-                    LL_slice.append(Qaux2[j, i] + Qaux3[j, i])
-
-            Loglikelihood = Qaux2 + Qaux3
-            Loglikelihood = np.nan_to_num(Loglikelihood, nan=-100000000000)
-            max_point_idx = np.where(Loglikelihood == np.max(Loglikelihood))
-            max_point = para_slice[max_point_idx[1][0] * N2 + max_point_idx[0][0]]
-            print(np.max(Loglikelihood), max_point)
-
-            if np.max(Loglikelihood) > self.log_likelihood_all[-1]:
-                self.point_all.append(max_point)
-                self.log_likelihood_all.append(np.max(Loglikelihood))
+    # def IRC_randomProj(self, obs, randProjNum = 1):
+    #     for l in range(randProjNum):
+    #         transformer = random_projection.GaussianRandomProjection(n_components=2)
+    #         transformer.fit_transform(self.point_all)
+    #         projectionMatRand = transformer.components_
+    #         print(projectionMatRand)
+    #
+    #         # Contour of the likelihood
+    #         step1 = 0.004  # for u (1st principle component)
+    #         step2 = 0.004  # for v (2nd principle component)
+    #         N1 = 4
+    #         N2 = 4
+    #         uOffset = - step1 * N1 / 2
+    #         vOffset = - step2 * N2 / 2
+    #
+    #         uValue = np.zeros(N1)
+    #         vValue = np.zeros(N2)
+    #         Qaux1 = np.zeros((N2, N1))  # Likelihood with ground truth latent
+    #         Qaux2 = np.zeros((N2, N1))  # Expected complete data likelihood
+    #         Qaux3 = np.zeros((N2, N1))  # Entropy of latent posterior
+    #         para_slice = []
+    #         LL_slice = []
+    #
+    #         for i in range(N1):
+    #             uValue[i] = step1 * (i) + uOffset
+    #             for j in range(N2):
+    #                 vValue[j] = step2 * (j) + vOffset
+    #
+    #                 para_slicePoints = self.point_all[-1] + uValue[i] * projectionMatRand[0] + \
+    #                                    vValue[j] * projectionMatRand[1]
+    #                 para_slice.append(para_slicePoints)
+    #                 para = np.copy(para_slicePoints)
+    #                 # para[2] = 0
+    #                 # para[3] = 0
+    #
+    #                 onebox = oneboxMDP(self.discount, self.nq, self.nr, self.na, para)
+    #                 onebox.setupMDP()
+    #                 onebox.solveMDP_sfm()
+    #                 ThA = onebox.ThA
+    #                 softpolicy = onebox.softpolicy
+    #                 pi = np.ones(self.nq) / self.nq   # initialize the estimation of the belief state
+    #                 onebpx_HMM = HMMonebox(ThA, softpolicy, pi)
+    #
+    #                 # Qaux1[j, i] = oneboxHMM.likelihood(lat, obs, ThA, policy)  #given latent state
+    #                 Qaux2[j, i] = onebpx_HMM.computeQaux(obs, ThA, softpolicy)
+    #                 Qaux3[j, i] = onebpx_HMM.latent_entr(obs)
+    #                 LL_slice.append(Qaux2[j, i] + Qaux3[j, i])
+    #
+    #         Loglikelihood = Qaux2 + Qaux3
+    #         Loglikelihood = np.nan_to_num(Loglikelihood, nan=-100000000000)
+    #         max_point_idx = np.where(Loglikelihood == np.max(Loglikelihood))
+    #         max_point = para_slice[max_point_idx[1][0] * N2 + max_point_idx[0][0]]
+    #         print(np.max(Loglikelihood), max_point)
+    #
+    #         if np.max(Loglikelihood) > self.log_likelihood_all[-1]:
+    #             self.point_all.append(max_point)
+    #             self.log_likelihood_all.append(np.max(Loglikelihood))
+    #
 
     def IRC(self, obs, learn_rate, alpha_rate):
         while True:

@@ -395,7 +395,7 @@ class ValueIteration_sfmZW(MDP):
         else:
             assert len(initial_value) == self.S, "The initial value must be " \
                 "a vector of length latent_dim."
-            self.V = _np.array(initial_value).reshape(self.S)
+            self.V = torch.tensor(initial_value).reshape(self.S)
         if self.discount < 1:
             # compute a bound for the number of iterations and update the
             # stored value of self.max_iter
@@ -639,7 +639,7 @@ class ValueIteration_opZW(MDP):
         else:
             assert len(initial_value) == self.S, "The initial value must be " \
                 "a vector of length latent_dim."
-            self.V = _np.array(initial_value).reshape(self.S)
+            self.V = torch.tensor(initial_value).reshape(self.S)
         if self.discount < 1:
             # compute a bound for the number of iterations and update the
             # stored value of self.max_iter
@@ -712,7 +712,7 @@ class ValueIteration_opZW(MDP):
         while True:
             self.iter += 1
 
-            Vprev = self.V.copy()
+            Vprev = self.V.clone().detach().requires_grad_(True)
 
 
             # Bellman Operator: compute policy and value functions
@@ -740,7 +740,7 @@ class ValueIteration_opZW(MDP):
                 break
 
         # store value and policy as tuples
-        self.V = tuple(self.V.tolist())
-        self.policy = tuple(self.policy.tolist())
+        #self.V = tuple(self.V.tolist())
+        #self.policy = tuple(self.policy.tolist())
 
         self.time = _time.time() - self.time
