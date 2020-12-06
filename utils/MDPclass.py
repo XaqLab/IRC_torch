@@ -12,10 +12,10 @@ import utils.util as _util
 _MSG_STOP_MAX_ITER = "Iterating stopped due to maximum number of iterations " \
     "condition."
 _MSG_STOP_EPSILON_OPTIMAL_POLICY = "Iterating stopped, epsilon-optimal " \
-    "policy found."
+    "optpolicy found."
 _MSG_STOP_EPSILON_OPTIMAL_VALUE = "Iterating stopped, epsilon-optimal value " \
     "function found."
-_MSG_STOP_UNCHANGING_POLICY = "Iterating stopped, unchanging policy found."
+_MSG_STOP_UNCHANGING_POLICY = "Iterating stopped, unchanging optpolicy found."
 
 def _computeDimensions(transition):
     A = len(transition)
@@ -70,7 +70,7 @@ class MDP(object):
         self.iter = 0
         # V should be stored as a vector ie shape of (latent_dim,) or (1, latent_dim)
         self.V = None
-        # policy can also be stored as a vector
+        # optpolicy can also be stored as a vector
         self.policy = None
 
     def __repr__(self):
@@ -84,9 +84,9 @@ class MDP(object):
     def _bellmanOperator(self, V=None):
         # Apply the Bellman operator on the value function.
         #
-        # Updates the value function and the Vprev-improving policy.
+        # Updates the value function and the Vprev-improving optpolicy.
         #
-        # Returns: (policy, value), tuple of new policy and its value
+        # Returns: (optpolicy, value), tuple of new optpolicy and its value
         #
         # If V hasn't been sent into the method, then we assume to be working
         # on the objects V attribute
@@ -104,24 +104,24 @@ class MDP(object):
         # P and V can be any object that supports indexing, so it is important
         # that you know they define a valid MDP before calling the
         # _bellmanOperator method. Otherwise the results will be meaningless.
-        #Q = _np.empty((self.A, self.S))
-        #Q = torch.empty(self.A, self.S)
+        #Q = _np.empty((self.state_transition, self.S))
+        #Q = torch.empty(self.state_transition, self.S)
         Q = []
         for aa in range(self.A):
             ### Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
             #Q[aa] = self.R[aa] + self.discount * self.P[aa].matmul(V)
             Q.append(self.R[aa] + self.discount * self.P[aa].matmul(V))
         Q = torch.stack(Q)
-        # Get the policy and value, for now it is being returned but...
+        # Get the optpolicy and value, for now it is being returned but...
         # Which way is better?
-        # 1. Return, (policy, value)
+        # 1. Return, (optpolicy, value)
 
         ### return (Q.argmax(axis=0), Q.max(axis=0))
         return (Q.argmax(dim=0), Q.max(dim=0)[0])   #tensor.max returns max value and indices as a tuple
 
-        # 2. update self.policy and self.V directly
+        # 2. update self.optpolicy and self.V directly
         # self.V = Q.max(axis=1)
-        # self.policy = Q.argmax(axis=1)
+        # self.optpolicy = Q.argmax(axis=1)
 
 
 
@@ -147,8 +147,8 @@ class MDP(object):
         # P and V can be any object that supports indexing, so it is important
         # that you know they define a valid MDP before calling the
         # _bellmanOperator method. Otherwise the results will be meaningless.
-        ### Q = _np.empty((self.A, self.S))
-        #Q = torch.empty(self.A, self.S)
+        ### Q = _np.empty((self.state_transition, self.S))
+        #Q = torch.empty(self.state_transition, self.S)
         Q = []
         for aa in range(self.A):
             ### Q[aa] = self.R[aa] + self.discount * self.P[aa].dot(V)
@@ -156,9 +156,9 @@ class MDP(object):
             Q.append(self.R[aa] + self.discount * self.P[aa].matmul(V))
         Q = torch.stack(Q)
 
-        # Get the policy and value, for now it is being returned but...
+        # Get the optpolicy and value, for now it is being returned but...
         # Which way is better?
-        # 1. Return, (policy, value)
+        # 1. Return, (optpolicy, value)
 
         ### expo = _np.zeros(Q.shape)
         ### softpolicy = _np.zeros(Q.shape)
@@ -168,12 +168,12 @@ class MDP(object):
         # for i in range(self.S):
         #     ###expo[:, i] = _np.exp(Q[:, i] / temperature)
         #     ### expo[:, i] = expo[:, i] / _np.max(expo[:, i])    # divide all the exp value with the max,
-        #     ###                                                  # allow the softpolicy approximate the optimal policy closely
+        #     ###                                                  # allow the softpolicy approximate the optimal optpolicy closely
         #     ### softpolicy[:, i] = expo[:, i] / _np.sum(expo[:, i])
         #
         #     expo[:, i] = torch.exp(Q[:, i] / temperature)     # IN TORCH, THE TEMPERATURE CANNOT BE TOO SMALL
         #     expo[:, i] = expo[:, i] / torch.max(expo[:, i])  # divide all the exp value with the max,
-        #     # allow the softpolicy approximate the optimal policy closely
+        #     # allow the softpolicy approximate the optimal optpolicy closely
         #     softpolicy[:, i] = expo[:, i] / torch.sum(expo[:, i])
         expQ =  torch.exp(Q / temperature)
         expQ = expQ / expQ.max(dim = 0)[0]
@@ -182,9 +182,9 @@ class MDP(object):
         ###return (softpolicy, _np.sum(Q * softpolicy, axis = 0))
         return (softpolicy, torch.sum(Q * softpolicy, axis=0))
 
-        # 2. update self.policy and self.V directly
+        # 2. update self.optpolicy and self.V directly
         # self.V = Q.max(axis=1)
-        # self.policy = Q.argmax(axis=1)
+        # self.optpolicy = Q.argmax(axis=1)
     #############################################
     #
     # Bellman equation for softmax (modified by ZW)
@@ -345,7 +345,7 @@ class ValueIteration_sfmZW(MDP):
     >>> expected = (5.93215488, 9.38815488, 13.38815488)
     >>> all(expected[k] - vi.V[k] < 1e-12 for k in range(len(expected)))
     True
-    >>> vi.policy
+    >>> vi.optpolicy
     (0, 0, 0)
     >>> vi.iter
     4
@@ -359,7 +359,7 @@ class ValueIteration_sfmZW(MDP):
     >>> expected = (40.048625392716815, 33.65371175967546)
     >>> all(expected[k] - vi.V[k] < 1e-12 for k in range(len(expected)))
     True
-    >>> vi.policy
+    >>> vi.optpolicy
     (1, 0)
     >>> vi.iter
     26
@@ -376,7 +376,7 @@ class ValueIteration_sfmZW(MDP):
     >>> expected = (40.048625392716815, 33.65371175967546)
     >>> all(expected[k] - vi.V[k] < 1e-12 for k in range(len(expected)))
     True
-    >>> vi.policy
+    >>> vi.optpolicy
     (1, 0)
 
     """
@@ -401,21 +401,21 @@ class ValueIteration_sfmZW(MDP):
             # stored value of self.max_iter
             self._boundIter(epsilon)
             # computation of threshold of variation for V for an epsilon-
-            # optimal policy
+            # optimal optpolicy
             self.thresh = epsilon * (1 - self.discount) / self.discount
 
             # ADDED by ZW since numpy has a high resolution
             self.thresh = max((2 ** 1 * _np.spacing(_np.float32(1))), self.thresh)
 
         else: # discount == 1
-            # threshold of variation for V for an epsilon-optimal policy
+            # threshold of variation for V for an epsilon-optimal optpolicy
             self.thresh = epsilon
 
     def _boundIter(self, epsilon):
         # Compute a bound for the number of iterations.
         #
         # for the value iteration
-        # algorithm to find an epsilon-optimal policy with use of span for the
+        # algorithm to find an epsilon-optimal optpolicy with use of span for the
         # stopping criterion
         #
         # Arguments -----------------------------------------------------------
@@ -424,7 +424,7 @@ class ValueIteration_sfmZW(MDP):
         #        optional (default : 0.01)
         # Evaluation ----------------------------------------------------------
         #    max_iter  = bound of the number of iterations for the value
-        #    iteration algorithm to find an epsilon-optimal policy with use of
+        #    iteration algorithm to find an epsilon-optimal optpolicy with use of
         #    span for the stopping criterion
         #    cpu_time  = used CPU time
         #
@@ -438,7 +438,7 @@ class ValueIteration_sfmZW(MDP):
         h = torch.zeros(self.S)
 
         for ss in range(self.S):
-            ###PP = _np.zeros((self.A, self.S))
+            ###PP = _np.zeros((self.state_transition, self.S))
             PP = torch.zeros(self.A, self.S)
             for aa in range(self.A):
                 try:
@@ -475,8 +475,8 @@ class ValueIteration_sfmZW(MDP):
             Vprev = self.V.clone().detach().requires_grad_(True) #NOT SURE ABUT THIS CLONE
 
             ''' modified by ZW
-            # Bellman Operator: compute policy and value functions
-            self.policy, self.V = self._bellmanOperator()
+            # Bellman Operator: compute optpolicy and value functions
+            self.optpolicy, self.V = self._bellmanOperator()
             '''
             self.softpolicy, self.V = self._bellmanOperator_softmax(temperature)   #modified by ZW
 
@@ -504,7 +504,7 @@ class ValueIteration_sfmZW(MDP):
                     print(_MSG_STOP_MAX_ITER)
                 break
 
-        # store value and policy as tuples
+        # store value and optpolicy as tuples
         # self.V = tuple(self.V.tolist())
         # self.softpolicy = tuple(self.softpolicy.tolist())
 
@@ -589,7 +589,7 @@ class ValueIteration_opZW(MDP):
     >>> expected = (5.93215488, 9.38815488, 13.38815488)
     >>> all(expected[k] - vi.V[k] < 1e-12 for k in range(len(expected)))
     True
-    >>> vi.policy
+    >>> vi.optpolicy
     (0, 0, 0)
     >>> vi.iter
     4
@@ -603,7 +603,7 @@ class ValueIteration_opZW(MDP):
     >>> expected = (40.048625392716815, 33.65371175967546)
     >>> all(expected[k] - vi.V[k] < 1e-12 for k in range(len(expected)))
     True
-    >>> vi.policy
+    >>> vi.optpolicy
     (1, 0)
     >>> vi.iter
     26
@@ -620,7 +620,7 @@ class ValueIteration_opZW(MDP):
     >>> expected = (40.048625392716815, 33.65371175967546)
     >>> all(expected[k] - vi.V[k] < 1e-12 for k in range(len(expected)))
     True
-    >>> vi.policy
+    >>> vi.optpolicy
     (1, 0)
 
     """
@@ -645,20 +645,20 @@ class ValueIteration_opZW(MDP):
             # stored value of self.max_iter
             self._boundIter(epsilon)
             # computation of threshold of variation for V for an epsilon-
-            # optimal policy
+            # optimal optpolicy
             self.thresh = epsilon * (1 - self.discount) / self.discount
 
             # ADDED by ZW since numpy has a high resolution
             self.thresh = max((2 ** 1 *_np.spacing(_np.float32(1))), self.thresh)
         else: # discount == 1
-            # threshold of variation for V for an epsilon-optimal policy
+            # threshold of variation for V for an epsilon-optimal optpolicy
             self.thresh = epsilon
 
     def _boundIter(self, epsilon):
         # Compute a bound for the number of iterations.
         #
         # for the value iteration
-        # algorithm to find an epsilon-optimal policy with use of span for the
+        # algorithm to find an epsilon-optimal optpolicy with use of span for the
         # stopping criterion
         #
         # Arguments -----------------------------------------------------------
@@ -667,7 +667,7 @@ class ValueIteration_opZW(MDP):
         #        optional (default : 0.01)
         # Evaluation ----------------------------------------------------------
         #    max_iter  = bound of the number of iterations for the value
-        #    iteration algorithm to find an epsilon-optimal policy with use of
+        #    iteration algorithm to find an epsilon-optimal optpolicy with use of
         #    span for the stopping criterion
         #    cpu_time  = used CPU time
         #
@@ -681,7 +681,7 @@ class ValueIteration_opZW(MDP):
         h = torch.zeros(self.S)
 
         for ss in range(self.S):
-            ###PP = _np.zeros((self.A, self.S))
+            ###PP = _np.zeros((self.state_transition, self.S))
             PP = torch.zeros(self.A, self.S)
             for aa in range(self.A):
                 try:
@@ -715,7 +715,7 @@ class ValueIteration_opZW(MDP):
             Vprev = self.V.clone().detach().requires_grad_(True)
 
 
-            # Bellman Operator: compute policy and value functions
+            # Bellman Operator: compute optpolicy and value functions
             self.policy, self.V = self._bellmanOperator()
 
             # The values, based on Q. For the function "max()": the option
@@ -739,8 +739,8 @@ class ValueIteration_opZW(MDP):
                     print(_MSG_STOP_MAX_ITER)
                 break
 
-        # store value and policy as tuples
+        # store value and optpolicy as tuples
         #self.V = tuple(self.V.tolist())
-        #self.policy = tuple(self.policy.tolist())
+        #self.optpolicy = tuple(self.optpolicy.tolist())
 
         self.time = _time.time() - self.time

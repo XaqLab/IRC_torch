@@ -25,7 +25,7 @@ def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
     T = sample_length
     N = sample_number
     oneboxdata = onebox_generate(discount, nq, nr, na, nl, parameters, parameters_exp, T, N)
-    oneboxdata.data_generate(policy, belief_ini, rew_ini)  # softmax policy
+    oneboxdata.data_generate(policy, belief_ini, rew_ini)  # softmax optpolicy
 
     belief = oneboxdata.belief
     action = oneboxdata.action
@@ -34,10 +34,10 @@ def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
 
     # sampleNum * sampleTime * dim of observations(=3 here, action, reward, location)
     # organize data
-    obsN = np.dstack([action, reward])  # includes the action and the observable states
-    latN = np.dstack([belief])
-    truthN = np.dstack([trueState])
-    dataN = np.dstack([obsN, latN, truthN])
+    obsN = torch.cat([action, reward], dim = -1)  # includes the action and the observable states
+    latN = torch.cat([belief])
+    truthN = torch.cat([trueState])
+    dataN = torch.cat([obsN, latN, truthN], dim = -1)
 
     path = os.getcwd()
     # write data to file
@@ -61,7 +61,9 @@ def onebox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
                  'food_consumed': food_consumed,
                  'push_button_cost': push_button_cost,
                  'app_rate_experiment': app_rate_experiment,
-                 'disapp_rate_experiment': disapp_rate_experiment
+                 'disapp_rate_experiment': disapp_rate_experiment,
+                 'belief_diffusion': belief_diffusion,
+                 'policy_temperature': policy_temperature
                  }
 
     # create a file that saves the parameter dictionary using pickle
@@ -87,12 +89,12 @@ class onebox_generate(oneboxMDP):
         self.sampleNum = sampleNum
         self.sampleTime = sampleTime
 
-        self.action = np.empty((self.sampleNum, self.sampleTime), int)  # initialize action, assumed to be optimal
-        self.hybrid = np.empty((self.sampleNum, self.sampleTime), int)  # initialize hybrid state.
+        self.action = [] #np.empty((self.sampleNum, self.sampleTime), int)  # initialize action, assumed to be optimal
+        self.hybrid = [] #np.empty((self.sampleNum, self.sampleTime), int)  # initialize hybrid state.
         # Here it is the joint state of reward and belief
-        self.belief = np.empty((self.sampleNum, self.sampleTime), int)  # initialize hidden state, belief state
-        self.reward = np.empty((self.sampleNum, self.sampleTime), int)  # initialize reward state
-        self.trueState = np.zeros((self.sampleNum, self.sampleTime))
+        self.belief = [] #np.empty((self.sampleNum, self.sampleTime), int)  # initialize hidden state, belief state
+        self.reward = [] #np.empty((self.sampleNum, self.sampleTime), int)  # initialize reward state
+        self.trueState = [] #np.zeros((self.sampleNum, self.sampleTime))
 
         self.setupMDP()
         self.solveMDP_op()
@@ -113,67 +115,109 @@ class onebox_generate(oneboxMDP):
         app_rate_experiment = self.parameters_exp['app_rate_experiment']
         disapp_rate_experiment = self.parameters_exp['disapp_rate_experiment']
 
-        if rew_ini == 'rand':
-            rew_ini = torch.randint(self.nr, (1,))
-        if belief_ini == 'rand':
-            belief_ini = torch.randint(self.nq, (1,))
 
         for i in range(self.sampleNum):
+            self.action.append([])
+            self.hybrid.append([])
+            self.belief.append([])
+            self.reward.append([])
+            self.trueState.append([])
+
+            if rew_ini == 'rand':
+                rew_ini = torch.randint(self.nr, (1,)).long()
+            if belief_ini == 'rand':
+                belief_ini = torch.randint(self.nq, (1,)).long()
+
             for t in range(self.sampleTime):
                 if t == 0:
-                    self.trueState[i, t] = np.random.binomial(1, app_rate_experiment)
-                    self.reward[i, t], self.belief[i, t] = rew_ini, belief_ini
-                    self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]  # This is for one box only
+                    self.trueState[i].append(torch.bernoulli(app_rate_experiment).long())
+                    self.reward[i].append(rew_ini)
+                    self.belief[i].append(belief_ini)
+                    self.hybrid[i].append(self.reward[i][-1] * self.nq + self.belief[i][-1])
+                    # self.trueState[i, t] = np.random.binomial(1, app_rate_experiment)
+                    # self.reward[i, t], self.belief[i, t] = rew_ini, belief_ini
+                    # self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]  # This is for one box only
                     if policy == 'opt':
-                        self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
+                        #self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
+                        self.action[i].append(self.optpolicy[self.hybrid[i][-1]])
                     elif policy == 'sfm':
-                        self.action[i, t] = self._choose_action(np.vstack(self.softpolicy.detach().numpy()).T[self.hybrid[i, t]])
+                        #self.action[i, t] = self._choose_action(np.vstack(self.softpolicy).T[self.hybrid[i, t]])
+                        self.action[i].append(self._choose_action(self.softpolicy.t()[self.hybrid[i][-1]].squeeze()))
                 else:
-                    if self.action[i, t - 1] != pb:
-                        stattemp = np.random.multinomial(1, self.ThA[self.action[i, t - 1], self.hybrid[i, t - 1], :].detach().numpy(),
-                                                         size=1)
-                        self.hybrid[i, t] = np.argmax(stattemp)
-                        self.reward[i, t], self.belief[i, t] = divmod(self.hybrid[i, t], self.nq)
-                        #self.action[i, t] = self.policy[self.hybrid[i, t]]
+                    if self.action[i][-1] != pb:
+                        # stattemp = np.random.multinomial(1, self.ThA[self.action[i, t - 1], self.hybrid[i, t - 1], :],
+                        #                                  size=1)
 
-                        if self.trueState[i, t - 1] == 0:
-                            self.trueState[i, t] = np.random.binomial(1, app_rate_experiment)
+                        self.hybrid[i].append(torch.multinomial(self.ThA[self.action[i][-1],
+                                                                self.hybrid[i][-1], :].squeeze(), 1, replacement=True))
+
+                        self.reward[i].append(torch.floor_divide(self.hybrid[i][-1], self.nq))
+                        self.belief[i].append(torch.fmod(self.hybrid[i][-1], self.nq))
+
+                        #self.reward[i, t], self.belief[i, t] = divmod(self.hybrid[i, t], self.nq)
+
+                        #self.hybrid[i, t] = np.argmax(stattemp)
+                        #self.reward[i, t], self.belief[i, t] = divmod(self.hybrid[i, t], self.nq)
+                        #self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
+
+                        if self.trueState[i][- 1] == 0:
+                            #self.trueState[i, t] = np.random.binomial(1, app_rate_experiment)
+                            self.trueState[i].append(torch.bernoulli(app_rate_experiment).long())
                         else:
-                            self.trueState[i, t] = 1 - np.random.binomial(1, disapp_rate_experiment)
+                            #self.trueState[i, t] = 1 - np.random.binomial(1, disapp_rate_experiment)
+                            self.trueState[i].append(1 - torch.bernoulli(disapp_rate_experiment).long())
                     else:
                         # for pb action, wait for usual time and then pb  #############
-                        if self.trueState[i, t - 1] == 0:
-                            self.trueState[i, t - 1] = np.random.binomial(1, app_rate_experiment)
+                        if self.trueState[i][-1] == 0:
+                            statetemp = torch.bernoulli(app_rate_experiment).long()
                         else:
-                            self.trueState[i, t - 1] = 1 - np.random.binomial(1, disapp_rate_experiment)
+                            statetemp = 1 - torch.bernoulli(disapp_rate_experiment).long()
                         # for pb action, wait for usual time and then pb  #############
 
-                        if self.trueState[i, t - 1] == 0:
-                            self.trueState[i, t] = self.trueState[i, t - 1]
-                            self.belief[i, t] = 0
-                            if self.reward[i, t - 1] == 0:
-                                self.reward[i, t] = 0
+                        if statetemp == 0:
+                            self.trueState[i].append(statetemp)
+                            self.belief[i].append(torch.LongTensor([0]))
+                            if self.reward[i][-1] == 0:
+                                self.reward[i].append(torch.LongTensor([0]))
                             else:
-                                self.reward[i, t] = np.random.binomial(1, 1 - food_consumed.detach().numpy())
+                                self.reward[i].append(torch.bernoulli(1 - food_consumed).long())
                         else:
-                            self.trueState[i, t] = np.random.binomial(1, food_missed.detach().numpy())
+                            #self.trueState[i, t] = np.random.binomial(1, food_missed.detach().numpy())
+                            self.trueState[i].append(torch.bernoulli(food_missed).long())
 
-                            if self.trueState[i, t] == 1:  # is dropped back after bp
-                                self.belief[i, t] = self.nq - 1
-                                if self.reward[i, t - 1] == 0:
-                                    self.reward[i, t] = 0
+                            if self.trueState[i][-1] == 1:  # is dropped back after bp
+                                self.belief[i].append(torch.LongTensor([self.nq - 1]).long())
+                                if self.reward[i][- 1] == 0:
+                                    self.reward[i].append(torch.LongTensor([0]).long())
                                 else:
-                                    self.reward[i, t] = np.random.binomial(1, 1 - food_consumed.detach().numpy())
+                                    self.reward[i].append(torch.bernoulli(1 - food_consumed).long())
+                                    #self.reward[i, t] = np.random.binomial(1, 1 - food_consumed.detach().numpy())
                             else:  # not dropped back
-                                self.belief[i, t] = 0
-                                self.reward[i, t] = 1  # give some reward
+                                self.belief[i].append(torch.LongTensor([0]).long())
+                                self.reward[i].append(torch.LongTensor([1]).long())
+                                #self.reward[i, t] = 1  # give some reward
 
-                        self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]
-
+                        self.hybrid[i].append(self.reward[i][-1] * self.nq + self.belief[i][-1])
                     if policy == 'opt':
-                        self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
+                        #self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
+                        self.action[i].append(self.optpolicy[self.hybrid[i][-1]])
                     elif policy == 'sfm':
-                        self.action[i, t] = self._choose_action(np.vstack(self.softpolicy.detach().numpy()).T[self.hybrid[i, t]])
+                        #self.action[i, t] = self._choose_action(np.vstack(self.softpolicy).T[self.hybrid[i, t]])
+                        self.action[i].append(self._choose_action(self.softpolicy.t()[self.hybrid[i][-1]].squeeze()))
+
+            self.action[-1] = torch.stack(self.action[-1])
+            self.hybrid[-1] = torch.stack(self.hybrid[-1] )
+            self.belief[-1] = torch.stack(self.belief[-1])
+            self.reward[-1] = torch.stack(self.reward[-1])
+            self.trueState[-1] = torch.stack(self.trueState[-1])
+
+        self.action = torch.stack(self.action)
+        self.hybrid = torch.stack(self.hybrid)
+        self.belief = torch.stack(self.belief)
+        self.reward = torch.stack(self.reward)
+        self.trueState = torch.stack(self.trueState)
+
+
 
     # def data_generate_op(self, belief_ini = 0, rew_ini = 0):
     #     """
@@ -196,14 +240,14 @@ class onebox_generate(oneboxMDP):
     #                 self.trueState[i, t] = np.random.binomial(1, app_rate_experiment)
     #                 self.reward[i, t], self.belief[i, t] = rew_ini, belief_ini
     #                 self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]    # This is for one box only
-    #                 self.action[i, t] = self.policy[self.hybrid[i, t]]
-    #                         # action is based on optimal policy
+    #                 self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
+    #                         # action is based on optimal optpolicy
     #             else:
     #                 if self.action[i, t-1] != pb:
     #                     stattemp = np.random.multinomial(1, self.ThA[self.action[i, t - 1], self.hybrid[i, t - 1], :], size = 1)
     #                     self.hybrid[i, t] = np.argmax(stattemp)
     #                     self.reward[i, t], self.belief[i, t] = divmod(self.hybrid[i, t], self.nq)
-    #                     self.action[i, t] = self.policy[self.hybrid[i, t]]
+    #                     self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
     #
     #                     if self.trueState[i, t - 1] == 0:
     #                         self.trueState[i, t] = np.random.binomial(1, app_rate_experiment)
@@ -238,7 +282,7 @@ class onebox_generate(oneboxMDP):
     #                             self.reward[i, t] = 1  # give some reward
     #
     #                     self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]
-    #                     self.action[i, t] = self.policy[self.hybrid[i, t]]
+    #                     self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
     #
     #
     # def data_generate_sfm(self, belief_ini = 0, rew_ini = 0):
@@ -263,7 +307,7 @@ class onebox_generate(oneboxMDP):
     #                 self.reward[i, t], self.belief[i, t] = rew_ini, belief_ini
     #                 self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]    # This is for one box only
     #                 self.action[i, t] = self._choose_action(np.vstack(self.softpolicy).T[self.hybrid[i, t]])
-    #                 # action is based on softmax policy
+    #                 # action is based on softmax optpolicy
     #             else:
     #                 if self.action[i, t-1] != pb:
     #                     stattemp = np.random.multinomial(1, self.ThA[self.action[i, t - 1], self.hybrid[i, t - 1], :], size = 1)
@@ -313,8 +357,10 @@ class onebox_generate(oneboxMDP):
 
     def _choose_action(self, pvec):
         # Generate action according to multinomial distribution
-        stattemp = np.random.multinomial(1, pvec)
-        return np.argmax(stattemp)
+        # stattemp = np.random.multinomial(1, pvec)
+        # return np.argmax(stattemp)
+
+        return torch.multinomial(pvec, 1, replacement=True)
 
 
 

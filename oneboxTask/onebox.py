@@ -21,7 +21,7 @@ pb = 1  # pb  = push button
 class oneboxMDP:
     """
     model onebox problem, set up the transition matrices and reward based on the given parameters,
-    and solve the MDP problem, return the optimal policy
+    and solve the MDP problem, return the optimal optpolicy
     """
     def __init__(self, discount, nq, nr, na, nl, parameters):
         self.discount = discount
@@ -121,8 +121,8 @@ class oneboxMDP:
         Reward_a = - torch.tensor([0, 1]) * push_button_cost
 
         [R1, R2, R3] = torch.meshgrid(Reward_a, Reward_h, Reward_h)
-        reward = R1 + R3
-        self.R = reward
+        Reward = R1 + R3
+        self.R = Reward
 
         self.ThA_t = torch.stack(self.ThA_t)
         for i in range(self.na):
@@ -140,7 +140,7 @@ class oneboxMDP:
         :return:
                 Q: Q value function
                    shape: (# of actions) * (# of states)
-                policy: the optimal policy based on the maximum Q value
+                optpolicy: the optimal optpolicy based on the maximum Q value
                         shape: # of states, take integer values indicating the action
                 softpolicy: probability of choosing each action
                             shape: (# of actions) * (# of states)
@@ -151,14 +151,14 @@ class oneboxMDP:
         vi.run()
         self.Q = self._QfromV(vi)   # shape na * number of state, use value to calculate Q value
 
-        #self.optpolicy = np.array(vi.policy)
+        #self.optpolicy = np.array(vi.optpolicy)
         self.optpolicy = vi.policy
 
-        ## policy iteration
+        ## optpolicy iteration
         #latent_ini = mdp.ValueIteration(self.ThA, self.R, self.discount, epsilon, niterations)
         #latent_ini.run()
         #self.Q = self._QfromV(latent_ini)
-        #self.policy = np.array(latent_ini.policy)
+        #self.optpolicy = np.array(latent_ini.optpolicy)
 
 
     def solveMDP_sfm(self, epsilon = 10**-6, niterations = 10000, initial_value=0):
@@ -172,7 +172,7 @@ class oneboxMDP:
         :return:
                 Q: Q value function
                    shape: (# of actions) * (# of states)
-                policy: softmax policy
+                optpolicy: softmax optpolicy
         """
 
         policy_temperature = self.parameters['policy_temperature']
@@ -182,13 +182,13 @@ class oneboxMDP:
         #self.softpolicy = np.array(vi.softpolicy)
         self.softpolicy = vi.softpolicy
 
-        return  vi.V
+        #return  vi.V
 
 
     def _QfromV(self, ValueIteration):
-        #Q = torch.zeros(ValueIteration.A, ValueIteration.S) # Q is of shape: num of actions * num of states
+        #Q = torch.zeros(ValueIteration.state_transition, ValueIteration.S) # Q is of shape: num of actions * num of states
         Q = []
-        for a in range(ValueIteration.A):
+        for a in range(ValueIteration.state_transition):
             Q.append(ValueIteration.R[a] + ValueIteration.discount * \
                                             ValueIteration.P[a].matmul(ValueIteration.V))
         Q = torch.stack(Q)
@@ -243,14 +243,14 @@ class oneboxMDP:
 #
 #                     self.reward[i, t], self.belief[i, t] = rew_ini, belief_ini
 #                     self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]    # This is for one box only
-#                     self.action[i, t] = self.policy[self.hybrid[i, t]]
-#                             # action is based on optimal policy
+#                     self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
+#                             # action is based on optimal optpolicy
 #                 else:
 #                     if self.action[i, t-1] != pb:
 #                         stattemp = np.random.multinomial(1, self.ThA[self.action[i, t - 1], self.hybrid[i, t - 1], :], size = 1)
 #                         self.hybrid[i, t] = np.argmax(stattemp)
 #                         self.reward[i, t], self.belief[i, t] = divmod(self.hybrid[i, t], self.nq)
-#                         self.action[i, t] = self.policy[self.hybrid[i, t]]
+#                         self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
 #
 #                         if self.trueState[i, t - 1] == 0:
 #                             self.trueState[i, t] = np.random.binomial(1, gamma_e)
@@ -289,7 +289,7 @@ class oneboxMDP:
 #                             #self.reward[i, t] = 1  # give some reward
 #
 #                         self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]
-#                         self.action[i, t] = self.policy[self.hybrid[i, t]]
+#                         self.action[i, t] = self.optpolicy[self.hybrid[i, t]]
 #
 #
 #     def dataGenerate_sfm(self, belief_ini, rew_ini):
@@ -317,7 +317,7 @@ class oneboxMDP:
 #                     self.reward[i, t], self.belief[i, t] = rew_ini, belief_ini
 #                     self.hybrid[i, t] = self.reward[i, t] * self.nq + self.belief[i, t]    # This is for one box only
 #                     self.action[i, t] = self._chooseAction(np.vstack(self.softpolicy).T[self.hybrid[i, t]])
-#                             # action is based on softmax policy
+#                             # action is based on softmax optpolicy
 #                 else:
 #                     if self.action[i, t-1] != pb:
 #                         stattemp = np.random.multinomial(1, self.ThA[self.action[i, t - 1], self.hybrid[i, t - 1], :], size = 1)
@@ -485,7 +485,7 @@ class oneboxMDP:
 #
 #     def _dpolicydQ(self):
 #         """
-#         derivative of the softmax policy with respect to Q value
+#         derivative of the softmax optpolicy with respect to Q value
 #         :return: dpdQ, shape: latent_dim * latent_dim
 #         """
 #         latent_dim = self.Qsfm.size
@@ -513,7 +513,7 @@ class oneboxMDP:
 #
 #         Rstack = np.reshape(self.R[:, 0, :], latent_dim)
 #
-#         softpolicydiag = np.diag(softpolicystack)    # policy, diagonal matrix
+#         softpolicydiag = np.diag(softpolicystack)    # optpolicy, diagonal matrix
 #         ThAstack = np.reshape(np.tile(self.ThA, (1, self.na)), (self.n * self.na, self.n * self.na))
 #                    # stack transition probability
 #         Qdiag = np.diag(Qstack)
@@ -606,7 +606,7 @@ class oneboxMDP:
 #
 #     def dpdpara(self):
 #
-#         # Derivative of the softmax policy with respect to the parameters
+#         # Derivative of the softmax optpolicy with respect to the parameters
 #
 #         dpdQ = self._dpolicydQ()
 #         #dQdpara_beta, dQdpara_gamma, dQdpara_epsilon, dQdpara_rho, dQdpara_r= self.dQdpara()

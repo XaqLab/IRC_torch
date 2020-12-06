@@ -51,8 +51,8 @@ class HMMonebox:
         act = obs[:, 0]   # action, two possible values: 0: doing nothing; 1: press button
         rew = obs[:, 1]   # observable, two possible values: 0 : not have; 1: have
 
-        alpha = torch.zeros(self.latent_dim, T)   # initialize alpha value for each belief value
-        scale = torch.zeros(T)
+        #alpha = torch.zeros(self.latent_dim, T)   # initialize alpha value for each belief value
+        #scale = torch.zeros(T)
         alpha = []
         scale = []
 
@@ -151,7 +151,7 @@ class HMMonebox:
 
     def compute_gamma(self, alpha, beta):
         gamma = alpha * beta
-        gamma = gamma    # dim = state # x T
+        #gamma = gamma    # dim = state # x T
         gamma = gamma / torch.sum(gamma, 0)
 
         return gamma

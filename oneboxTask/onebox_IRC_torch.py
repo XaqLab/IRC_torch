@@ -1,10 +1,10 @@
 from oneboxTask.onebox import *
 from oneboxTask.onebox_HMM import *
-from oneboxTask.onebox_grad import *
+
 from sklearn.decomposition import PCA
 from sklearn import random_projection
 import matplotlib.pyplot as plt
-
+import torch.utils.data as data_utils
 from torch import optim
 
 class onebox_IRC_torch():
@@ -16,13 +16,11 @@ class onebox_IRC_torch():
         self.nl = nl
         self.n = (self.nq ** self.nl) * self.nr   # total number of states
 
-        self.para = parametersInit
-        #self.ll = LLInit
+        self.para = parametersInit  # dictionary of parameters
 
         self.point_all = []  # List of parameters
         self.log_likelihood_all = []  # List of likelihood
 
-        #self.model_optimizer=Adam([self.model_parameters],lr=arg.ADAM_LR)
 
     # def IRC_randomProj(self, obs, randProjNum = 1):
     #     for l in range(randProjNum):
@@ -64,10 +62,10 @@ class onebox_IRC_torch():
     #                 onebox.solveMDP_sfm()
     #                 ThA = onebox.ThA
     #                 softpolicy = onebox.softpolicy
-    #                 pi = np.ones(self.nq) / self.nq   # initialize the estimation of the belief state
-    #                 onebpx_HMM = HMMonebox(ThA, softpolicy, pi)
+    #                 latent_ini = np.ones(self.nq) / self.nq   # initialize the estimation of the belief state
+    #                 onebpx_HMM = HMMonebox(ThA, softpolicy, latent_ini)
     #
-    #                 # Qaux1[j, i] = oneboxHMM.likelihood(lat, obs, ThA, policy)  #given latent state
+    #                 # Qaux1[j, i] = oneboxHMM.likelihood(lat, obs, ThA, optpolicy)  #given latent state
     #                 Qaux2[j, i] = onebpx_HMM.computeQaux(obs, ThA, softpolicy)
     #                 Qaux3[j, i] = onebpx_HMM.latent_entr(obs)
     #                 LL_slice.append(Qaux2[j, i] + Qaux3[j, i])
@@ -82,26 +80,29 @@ class onebox_IRC_torch():
     #             self.point_all.append(max_point)
     #             self.log_likelihood_all.append(np.max(Loglikelihood))
     #
-
-    def likelihood_tensor(self, obs, nq, nr, na, nl, discount):
-        food_missed, app_rate, disapp_rate, food_consumed, push_button_cost, belief_diffusion, policy_temperature = self.para
-        parameters_agent = {'food_missed': food_missed,
-                            'app_rate': app_rate,
-                            'disapp_rate': disapp_rate,
-                            'food_consumed': food_consumed,
-                            'push_button_cost': push_button_cost,
-                            'belief_diffusion': belief_diffusion,
-                            'policy_temperature': policy_temperature
-                            }
-        #parameters_agent = collections.OrderedDict(sorted(parameters_agent.items()))
-
+    def likelihood_tensor_ave(self, obs):
         """
-        maximum log-likelihood
+        average log-likelihood of samples
+        :param obs:
+        :return:
+        """
+        ns = obs.shape[0]
+        log_likelihood = 0
+        for i in range(ns):
+            log_likelihood += self.likelihood_tensor(obs[i])
+        log_likelihood /= ns
+
+        return log_likelihood
+
+    def likelihood_tensor(self, obs):
+        """
+        log-likelihood of a single sample
+        # obs is from one sample. [act, rew] at each time point
         """
 
-        pi = torch.ones(nq) / nq
+        pi = torch.ones(self.nq) / self.nq
 
-        onebox_temp = oneboxMDP(discount, nq, nr, na, nl, parameters_agent)
+        onebox_temp = oneboxMDP(self.discount, self.nq, self.nr, self.na, self.nl, self.para)
         onebox_temp.setupMDP()
         onebox_temp.solveMDP_sfm()
         ThA = onebox_temp.ThA
@@ -109,95 +110,69 @@ class onebox_IRC_torch():
         oneboxHMM = HMMonebox(ThA, softpolicy, pi)
 
         log_likelihood = oneboxHMM.log_likelihood(obs, ThA, softpolicy)
+        log_likelihood /= len(obs)
 
-        return -log_likelihood
+        return log_likelihood
 
-    def IRC(self, obs, nq, nr, na, nl, discount):
-        lr = 1e-5
-        n_epochs = 10
+    def IRC_batch(self, obsN, lr, eps, batch_size, shuffle):
 
-        optimizer = optim.SGD(self.para, lr=lr)
+        obsN_loader = data_utils.DataLoader(obsN, batch_size, shuffle)
 
-        for epoch in range(n_epochs):
-            optimizer.zero_grad()
-            loss = self.likelihood_tensor(obs, nq, nr, na, nl, discount)
+        epoch = 0
+        optimizer = optim.SGD(list(self.para.values()), lr=lr)
 
-            self.point_all.append(self.para)
-            self.log_likelihood_all.append(-loss)
-            print(self.para)
-            print(-loss)
+        while True:
 
-            loss.backward()
-            print([p.grad for p in self.para], '\n\n')
-            optimizer.step()
+            for i, obsN_minibatch in enumerate(obsN_loader):
+                # data contains data in one mini-batches, contains a few samples
+                loss = - self.likelihood_tensor_ave(obsN_minibatch)
+
+                self.point_all.append(self.para)
+                self.log_likelihood_all.append(loss)
+                #print(self.para)
+                #print(-loss)
+
+                optimizer.zero_grad()
+                loss.backward()
+                #print(i, [p.grad for k, p in self.para.items()])
+                optimizer.step()
+                #print(self.para)
+                #print('\n\n')
+
+            if epoch % 5 == 4:
+                print("epoch: %d, loss: %1.3f" % (epoch + 1, loss))
+
+            if len(self.log_likelihood_all) >= 2 and torch.abs(self.log_likelihood_all[-1] - self.log_likelihood_all[-2]) < eps:
+                break
+            if epoch >= 200:
+                break
+
+            epoch += 1
 
 
-        # while True:
-        #     alpha = 1
-        #
-        #     """
-        #     Initial point for gradient descent
-        #     """
-        #     p_last = self.point_all[-1]
-        #     max_ll_last = self.log_likelihood_all[-1]
-        #     print('The current point is:', p_last)
-        #     print('The current log-likelihood is: \n {}'.format(max_ll_last))
-        #
-        #     """
-        #     Gradient of the parameters
-        #     """
-        #     oneboxd = oneboxMDPder(self.discount, self.nq, self.nr, self.na, p_last)
-        #     oneboxd1st = oneboxd.dloglikelihhod_dpara_sim(obs)
-        #     print('The current gradient is', oneboxd1st)
-        #
-        #     """
-        #     Check the log-likelihood with an updated parameter based on gradient descent (better? not guaranteed)
-        #     """
-        #     para_temp = p_last + alpha * learn_rate * np.array(oneboxd1st)
-        #     onebox_temp = oneboxMDP(self.discount, self.nq, self.nr, self.na, para_temp)
-        #     onebox_temp.setupMDP()
-        #     onebox_temp.solveMDP_sfm()
-        #     ThA = onebox_temp.ThA
-        #     softpolicy = onebox_temp.softpolicy
-        #     pi = np.ones(self.nq) / self.nq   # initialize the estimation of the belief state
-        #     oneboxHMM_temp = HMMonebox(ThA, softpolicy, pi)
-        #     max_ll_temp = oneboxHMM_temp.computeQaux(obs, ThA, softpolicy) + \
-        #                   oneboxHMM_temp.latent_entr(obs)
-        #     print(' Potential new log-likelihood:', max_ll_temp)
-        #
-        #     """
-        #     if the updated log-likelihood is not good enough, we need to use Armijo rule to find the step-size
-        #     """
-        #     while max_ll_temp < max_ll_last + 0.2 * alpha * learn_rate * np.array(oneboxd1st).dot(np.array(oneboxd1st)):
-        #         alpha /= alpha_rate
-        #         para_temp = p_last + alpha * learn_rate * np.array(oneboxd1st)
-        #         print(para_temp)
-        #
-        #         ## Check the ECDLL (old posterior, new parameters)
-        #         onebox_new = oneboxMDP(self.discount, self.nq, self.nr, self.na, para_temp)
-        #         onebox_new.setupMDP()
-        #         onebox_new.solveMDP_sfm()
-        #         ThA_new = onebox_new.ThA
-        #         softpolicy_new = onebox_new.softpolicy
-        #
-        #         oneboxHMM_new = HMMonebox(ThA_new, softpolicy_new, pi)
-        #         max_ll_temp_new = oneboxHMM_new.computeQaux(obs, ThA_new, softpolicy_new
-        #                                                     ) + oneboxHMM_new.latent_entr(obs)
-        #
-        #         print('    Amijio temp log-likelihood: ', max_ll_temp_new, '  (alpha = ', alpha, ')')
-        #         if alpha < 10 ** -6:
-        #             break
-        #
-        #         max_ll_temp = max_ll_temp_new
-        #
-        #     print('\n\n')
-        #     self.point_all.append(para_temp)
-        #     self.log_likelihood_all.append(max_ll_temp)
-        #
-        #     if len(self.log_likelihood_all) >= 2 and np.abs(
-        #             self.log_likelihood_all[-1] - self.log_likelihood_all[-2]) < 5 * 10 ** -2:
-        #         print("GD finish")
-        #         break
+
+    # def IRC(self, obs, lr, eps):
+    #
+    #     n_epochs = 0
+    #     optimizer = optim.SGD(list(self.para.values()), lr=lr)
+    #
+    #     while True:
+    #         optimizer.zero_grad()
+    #         loss = - self.likelihood_tensor(obs)
+    #
+    #         self.point_all.append(self.para)
+    #         self.log_likelihood_all.append(loss)
+    #         # print(self.para)
+    #         # print(-loss)
+    #
+    #         loss.backward()
+    #         # print([p.grad for k, p in self.para.items()], '\n\n')
+    #         optimizer.step()
+    #
+    #         if len(self.log_likelihood_all) >= 2 and \
+    #                 torch.abs(self.log_likelihood_all[-1] - self.log_likelihood_all[-2]) < eps:
+    #             break
+    #         n_epochs += 1
 
 
     # def contour_LL(self, obs, step1 = 0.02, step2 = 0.02, N1 = 6, N2 = 6, proj = 'PCA'):
@@ -243,10 +218,10 @@ class onebox_IRC_torch():
     #                 onebox.solveMDP_sfm()
     #                 ThA = onebox.ThA
     #                 softpolicy = onebox.softpolicy
-    #                 pi = np.ones(self.nq) / self.nq   # initialize the estimation of the belief state
-    #                 oneHMM = HMMonebox(ThA, softpolicy, pi)
+    #                 latent_ini = np.ones(self.nq) / self.nq   # initialize the estimation of the belief state
+    #                 oneHMM = HMMonebox(ThA, softpolicy, latent_ini)
     #
-    #                 # Qaux1[j, i] = oneboxHMM.likelihood(lat, obs, ThA, policy)  #given latent state
+    #                 # Qaux1[j, i] = oneboxHMM.likelihood(lat, obs, ThA, optpolicy)  #given latent state
     #                 Qaux2[j, i] = oneHMM.computeQaux(obs, ThA, softpolicy)
     #                 Qaux3[j, i] = oneHMM.latent_entr(obs)
     #

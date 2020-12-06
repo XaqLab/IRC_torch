@@ -127,7 +127,7 @@ def beliefTransitionMatrixGaussian(p_appear, p_disappear, nq, sigma):
     #         qq = j * dq + dq / 2
     #
     #         d[j, i] = abs(a * q - qq + p_appear) / sqrt(a ** 2 + 1)
-    #         Trrr[j, i] = 1/torch.sqrt(2*math.pi) / sigma * torch.exp(-1/2 * ((d[j, i] - mu) / sigma) ** 2 )
+    #         Trrr[j, i] = 1/torch.sqrt(2*math.latent_ini) / sigma * torch.exp(-1/2 * ((d[j, i] - mu) / sigma) ** 2 )
     #         #norm.pdf(d[j, i], mu, sigma)
 
     dq = 1 / nq
@@ -278,134 +278,134 @@ def _im2col_sliding(state_transition, size):
 '''
 
 
-# def _im2col_distinct(A, size):
-#     A = A.T
-#     dy, dx = size[::-1]
-#     assert A.shape[0] % dy == 0
-#     assert A.shape[1] % dx == 0
-#
-#     ncol = (A.shape[0]//dy) * (A.shape[1]//dx)
-#     R = np.empty((ncol, dx*dy), dtype=A.dtype)
-#     k = 0
-#     for i in range(0, A.shape[0], dy):
-#         for j in range(0, A.shape[1], dx):
-#             R[k, :] = A[i:i+dy, j:j+dx].ravel()
-#             k += 1
-#     return R.T
-#
-#
-# def _im2col_sliding(A, size):
-#     A = A.T
-#     dy, dx = size[::-1]
-#     xsz = A.shape[1]-dx+1
-#     ysz = A.shape[0]-dy+1
-#     R = np.empty((xsz*ysz, dx*dy), dtype=A.dtype)
-#
-#     for i in range(ysz):
-#         for j in range(xsz):
-#             R[i*xsz+j, :] = A[i:i+dy, j:j+dx].ravel()
-#     return R.T
-#
-#
-# def im2col(A, size, type='sliding'):
-#     """This function behaves similar to *im2col* in MATLAB.
-#
-#     Parameters
-#     ----------
-#     A : 2-D ndarray
-#         Image from which windows are obtained.
-#     size : 2-tuple
-#         Shape of each window.
-#     type : {'sliding', 'distinct'}, optional
-#         The type of the windows.
-#
-#     Returns
-#     -------
-#     windows : 2-D ndarray
-#         The flattened windows stacked vertically.
-#
-#     """
-#
-#     if type == 'sliding':
-#         return _im2col_sliding(A, size)
-#     elif type == 'distinct':
-#         return _im2col_distinct(A, size)
-#     raise ValueError("invalid type of window")
-#
-#
-# def _col2im_distinct(R, size, width):
-#     R = R.T
-#     dy, dx = size[::-1]
-#
-#     assert width % dx == 0
-#     nwinx = width//dx
-#     xsz = nwinx*dx
-#
-#     assert R.shape[0] % nwinx == 0
-#     nwiny = R.shape[0]//nwinx
-#     ysz = nwiny*dy
-#
-#     A = np.empty((ysz, xsz), dtype=R.dtype)
-#     k = 0
-#     for i in range(0, ysz, dy):
-#         for j in range(0, xsz, dx):
-#             A[i:i+dy, j:j+dx] = R[k].reshape(size[::-1])
-#             k += 1
-#     return A.T
-#
-#
-# def _col2im_sliding(R, size, width):
-#     '*********** This is not the same in Matlab, need to be modified later *****************'
-#     R = R.T
-#     dy, dx = size
-#     xsz = width-dx+1
-#     ysz = R.shape[0]//xsz
-#
-#     A = np.empty((ysz+(dy-1), width), dtype = R.dtype)
-#     for i in range(ysz):
-#         for j in range(xsz):
-#             A[i:i+dy, j:j+dx] = R[i*xsz+j, :].reshape(dy, dx)
-#     return A.T
-#
-#
-# def col2im(R, size, width, type='sliding'):
-#     """This function behaves similar to *col2im* in MATLAB.
-#
-#     It is the inverse of :func:`im2col`::
-#
-#             state_transition == col2im(im2col(state_transition, size), size, state_transition.shape[1])
-#
-#     `R` is what `im2col` returns. `Size` and `type` are the same as
-#     in `im2col`. `Width` is the number of columns in `state_transition`.
-#
-#     Examples
-#     --------
-#     import numpy as np
-#     a = np.arange(12).reshape(3,4)
-#     a
-#     array([[ 0,  1,  2,  3],
-#            [ 4,  5,  6,  7],
-#            [ 8,  9, 10, 11]])
-#     b = im2col(a, (2,2))
-#     b
-#     array([[ 0,  1,  4,  5],
-#            [ 1,  2,  5,  6],
-#            [ 2,  3,  6,  7],
-#            [ 4,  5,  8,  9],
-#            [ 5,  6,  9, 10],
-#            [ 6,  7, 10, 11]])
-#     col2im(b, (2,2), a.shape[1])
-#     array([[ 0,  1,  2,  3],
-#            [ 4,  5,  6,  7],
-#            [ 8,  9, 10, 11]])
-#
-#     """
-#     if type == 'sliding':
-#         return _col2im_sliding(R, size, width)
-#     elif type == 'distinct':
-#         return _col2im_distinct(R, size, width)
-#     raise ValueError("invalid type of window")
-#
+def _im2col_distinct(A, size):
+    A = A.T
+    dy, dx = size[::-1]
+    assert A.shape[0] % dy == 0
+    assert A.shape[1] % dx == 0
+
+    ncol = (A.shape[0]//dy) * (A.shape[1]//dx)
+    R = np.empty((ncol, dx*dy), dtype=A.dtype)
+    k = 0
+    for i in range(0, A.shape[0], dy):
+        for j in range(0, A.shape[1], dx):
+            R[k, :] = A[i:i+dy, j:j+dx].ravel()
+            k += 1
+    return R.T
+
+
+def _im2col_sliding(A, size):
+    A = A.T
+    dy, dx = size[::-1]
+    xsz = A.shape[1]-dx+1
+    ysz = A.shape[0]-dy+1
+    R = np.empty((xsz*ysz, dx*dy), dtype=A.dtype)
+
+    for i in range(ysz):
+        for j in range(xsz):
+            R[i*xsz+j, :] = A[i:i+dy, j:j+dx].ravel()
+    return R.T
+
+
+def im2col(A, size, type='sliding'):
+    """This function behaves similar to *im2col* in MATLAB.
+
+    Parameters
+    ----------
+    A : 2-D ndarray
+        Image from which windows are obtained.
+    size : 2-tuple
+        Shape of each window.
+    type : {'sliding', 'distinct'}, optional
+        The type of the windows.
+
+    Returns
+    -------
+    windows : 2-D ndarray
+        The flattened windows stacked vertically.
+
+    """
+
+    if type == 'sliding':
+        return _im2col_sliding(A, size)
+    elif type == 'distinct':
+        return _im2col_distinct(A, size)
+    raise ValueError("invalid type of window")
+
+
+def _col2im_distinct(R, size, width):
+    R = R.T
+    dy, dx = size[::-1]
+
+    assert width % dx == 0
+    nwinx = width//dx
+    xsz = nwinx*dx
+
+    assert R.shape[0] % nwinx == 0
+    nwiny = R.shape[0]//nwinx
+    ysz = nwiny*dy
+
+    A = np.empty((ysz, xsz), dtype=R.dtype)
+    k = 0
+    for i in range(0, ysz, dy):
+        for j in range(0, xsz, dx):
+            A[i:i+dy, j:j+dx] = R[k].reshape(size[::-1])
+            k += 1
+    return A.T
+
+
+def _col2im_sliding(R, size, width):
+    '*********** This is not the same in Matlab, need to be modified later *****************'
+    R = R.T
+    dy, dx = size
+    xsz = width-dx+1
+    ysz = R.shape[0]//xsz
+
+    A = np.empty((ysz+(dy-1), width), dtype = R.dtype)
+    for i in range(ysz):
+        for j in range(xsz):
+            A[i:i+dy, j:j+dx] = R[i*xsz+j, :].reshape(dy, dx)
+    return A.T
+
+
+def col2im(R, size, width, type='sliding'):
+    """This function behaves similar to *col2im* in MATLAB.
+
+    It is the inverse of :func:`im2col`::
+
+            state_transition == col2im(im2col(state_transition, size), size, state_transition.shape[1])
+
+    `R` is what `im2col` returns. `Size` and `type` are the same as
+    in `im2col`. `Width` is the number of columns in `state_transition`.
+
+    Examples
+    --------
+    import numpy as np
+    a = np.arange(12).reshape(3,4)
+    a
+    array([[ 0,  1,  2,  3],
+           [ 4,  5,  6,  7],
+           [ 8,  9, 10, 11]])
+    b = im2col(a, (2,2))
+    b
+    array([[ 0,  1,  4,  5],
+           [ 1,  2,  5,  6],
+           [ 2,  3,  6,  7],
+           [ 4,  5,  8,  9],
+           [ 5,  6,  9, 10],
+           [ 6,  7, 10, 11]])
+    col2im(b, (2,2), a.shape[1])
+    array([[ 0,  1,  2,  3],
+           [ 4,  5,  6,  7],
+           [ 8,  9, 10, 11]])
+
+    """
+    if type == 'sliding':
+        return _col2im_sliding(R, size, width)
+    elif type == 'distinct':
+        return _col2im_distinct(R, size, width)
+    raise ValueError("invalid type of window")
+
 
 '''
 The im2col and col2im functions referred to the code on
@@ -414,10 +414,10 @@ http://fhs1.bitbucket.org/glasslab_cluster/_modules/glasslab_cluster/utils.html
 '''
 
 
-# def reversekron(AB, n):
-#     BA = col2im(im2col(AB, tuple(n[1] * np.array([1, 1])), 'distinct').T, tuple(n[0] * np.array([1, 1])),
-#          np.prod(n), 'distinct')
-#     return BA
+def reversekron(AB, n):
+    BA = col2im(im2col(AB, tuple(n[1] * np.array([1, 1])), 'distinct').T, tuple(n[0] * np.array([1, 1])),
+         np.prod(n), 'distinct')
+    return BA
 
 def tensorsum_torch(t1, t2):
     mark = 0
@@ -448,13 +448,13 @@ def tensorsum_torch(t1, t2):
     return expanded_t1 + tiled_t2
 
 
-# ra, ca = A.shape
-#     rb, cb = B.shape
+# ra, ca = state_transition.shape
+#     rb, cb = obs_emission.shape
 #     C = torch.empty(ra * rb, ca * cb)
 #
 #     for i in range(ra):
 #         for j in range(ca):
-#             C[i*rb : (i+1)*rb, j*cb : (j+1)*cb] = A[i, j] + B
+#             C[i*rb : (i+1)*rb, j*cb : (j+1)*cb] = state_transition[i, j] + obs_emission
 #
 #     return C
 
@@ -472,14 +472,14 @@ i    '''
 
 
 
-# def tensorsum(A, B):
-#     ra, ca = A.shape
-#     rb, cb = B.shape
+# def tensorsum(state_transition, obs_emission):
+#     ra, ca = state_transition.shape
+#     rb, cb = obs_emission.shape
 #     C = np.empty((ra * rb, ca * cb))
 #
 #     for i in range(ra):
 #         for j in range(ca):
-#             C[i*rb : (i+1)*rb, j*cb : (j+1)*cb] = A[i, j] + B
+#             C[i*rb : (i+1)*rb, j*cb : (j+1)*cb] = state_transition[i, j] + obs_emission
 #
 #     return C
 #

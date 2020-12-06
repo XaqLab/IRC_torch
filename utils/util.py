@@ -23,7 +23,7 @@ isStochastic
 
 """
 
-# Copyright (c) 2011-2015 Steven A. W. Cordwell
+# Copyright (c) 2011-2015 Steven state_transition. W. Cordwell
 # Copyright (c) 2009 INRA
 #
 # All rights reserved.
@@ -42,7 +42,7 @@ isStochastic
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR state_transition PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
 # LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
 # CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
@@ -60,12 +60,12 @@ _MDPERR = {
 "mat_nonneg" :
     "Transition probabilities must be non-negative.",
 "mat_square" :
-    "A transition probability matrix must be square, with dimensions S×S.",
+    "state_transition transition probability matrix must be square, with dimensions S×S.",
 "mat_stoch" :
     "Each row of a transition probability matrix must sum to one (1).",
 "obj_shape" :
     "Object arrays for transition probabilities and rewards "
-    "must have only 1 dimension: the number of actions A. Each element of "
+    "must have only 1 dimension: the number of actions state_transition. Each element of "
     "the object array contains an SxS ndarray or matrix.",
 "obj_square" :
     "Each element of an object array for transition "
@@ -76,17 +76,17 @@ _MDPERR = {
     "i.e. type(P) is ndarray.",
 "P_shape" :
     "The transition probability array must have the shape "
-    "(A, S, S)  with S : number of states greater than 0 and A : number of "
-    "actions greater than 0. i.e. R.shape = (A, S, S)",
+    "(state_transition, S, S)  with S : number of states greater than 0 and state_transition : number of "
+    "actions greater than 0. i.e. R.shape = (state_transition, S, S)",
 "PR_incompat" :
     "Incompatibility between P and R dimensions.",
 "R_type" :
     "The rewards must be in a numpy array; i.e. type(R) is "
     "ndarray, or numpy matrix; i.e. type(R) is matrix.",
 "R_shape" :
-    "The reward matrix R must be an array of shape (A, S, S) or "
-    "(S, A) with S : number of states greater than 0 and A : number of "
-    "actions greater than 0. i.e. R.shape = (S, A) or (A, S, S)."
+    "The reward matrix R must be an array of shape (state_transition, S, S) or "
+    "(S, state_transition) with S : number of states greater than 0 and state_transition : number of "
+    "actions greater than 0. i.e. R.shape = (S, state_transition) or (state_transition, S, S)."
 }
 
 def _checkDimensionsListLike(arrays):
@@ -192,7 +192,7 @@ def checkSquareStochastic(matrix):
     Arguments
     ---------
     ``matrix`` : numpy.ndarray, scipy.sparse.*_matrix
-        A two dimensional array (matrix).
+        state_transition two dimensional array (matrix).
 
     Notes
     -----
@@ -209,21 +209,21 @@ def checkSquareStochastic(matrix):
 def check(P, R):
     """Check if ``P`` and ``R`` define a valid Markov Decision Process (MDP).
 
-    Let ``S`` = number of states, ``A`` = number of actions.
+    Let ``S`` = number of states, ``state_transition`` = number of actions.
 
     Arguments
     ---------
     P : array
         The transition matrices. It can be a three dimensional array with
-        a shape of (A, S, S). It can also be a one dimensional arraye with
-        a shape of (A, ), where each element contains a matrix of shape (S, S)
+        a shape of (state_transition, S, S). It can also be a one dimensional arraye with
+        a shape of (state_transition, ), where each element contains a matrix of shape (S, S)
         which can possibly be sparse.
     R : array
         The reward matrix. It can be a three dimensional array with a
-        shape of (S, A, A). It can also be a one dimensional array with a
-        shape of (A, ), where each element contains matrix with a shape of
+        shape of (S, state_transition, state_transition). It can also be a one dimensional array with a
+        shape of (state_transition, ), where each element contains matrix with a shape of
         (S, S) which can possibly be sparse. It can also be an array with
-        a shape of (S, A) which can possibly be sparse.
+        a shape of (S, state_transition) which can possibly be sparse.
 
     Notes
     -----
