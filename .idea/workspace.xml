@@ -2,25 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="df70ce86-e03a-449b-8a9a-e165588d1986" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/twoboxTask/Data/12052020(0153)_dataN_twobox.pkl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/twoboxTask/Data/12052020(0153)_para_twobox.pkl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/twoboxTask/twobox.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/twoboxTask/twobox_HMM.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/twoboxTask/twobox_IRC_torch.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/twoboxTask/twobox_generate.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/twoboxTask/twobox_main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Untitled.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Untitled.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_HMM.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_HMM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_IRC.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Untitled.ipynb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_IRC_torch.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_IRC_torch.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_generate.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_generate.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_grad.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/twoboxTask/Data/12052020(0153)_dataN_twobox.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/twoboxTask/Data/12052020(0153)_para_twobox.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/twoboxTask/twobox_IRC_torch.py" beforeDir="false" afterPath="$PROJECT_DIR$/twoboxTask/twobox_IRC_torch.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/twoboxTask/twobox_generate.py" beforeDir="false" afterPath="$PROJECT_DIR$/twoboxTask/twobox_generate.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/twoboxTask/twobox_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/twoboxTask/twobox_main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/MDPclass.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/MDPclass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/boxtask_func.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/boxtask_func.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/util.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/util.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,6 +35,7 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
@@ -117,7 +109,7 @@
       <updated>1604595234088</updated>
       <workItem from="1604595235446" duration="47465000" />
       <workItem from="1605641402186" duration="43547000" />
-      <workItem from="1605908231913" duration="68470000" />
+      <workItem from="1605908231913" duration="89626000" />
     </task>
     <servers />
   </component>
@@ -125,62 +117,63 @@
     <option name="version" value="3" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="392" y="-953" key="CommitChangelistDialog2" timestamp="1607015555148">
-      <screen x="-114" y="-1057" width="1920" height="1057" />
+    <state x="380" y="51" key="CommitChangelistDialog2" timestamp="1607307939053">
+      <screen x="0" y="23" width="1440" height="877" />
     </state>
     <state x="392" y="-953" key="CommitChangelistDialog2/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607015555148" />
+    <state x="380" y="51" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1607307939053" />
     <state width="862" height="466" key="DebuggerActiveHint" timestamp="1605898196945">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
     <state width="862" height="466" key="DebuggerActiveHint/0.23.1440.877@0.23.1440.877" timestamp="1605898196945" />
-    <state width="1878" height="311" key="GridCell.Tab.0.bottom" timestamp="1607236943770">
+    <state width="1772" height="450" key="GridCell.Tab.0.bottom" timestamp="1607327127561">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1878" height="311" key="GridCell.Tab.0.bottom/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607236943770" />
+    <state width="1772" height="450" key="GridCell.Tab.0.bottom/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327127561" />
     <state width="1307" height="199" key="GridCell.Tab.0.bottom/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062854380" />
-    <state width="1400" height="230" key="GridCell.Tab.0.bottom/0.23.1440.877@0.23.1440.877" timestamp="1607029018197" />
-    <state width="1878" height="311" key="GridCell.Tab.0.center" timestamp="1607236943769">
+    <state width="1446" height="261" key="GridCell.Tab.0.bottom/0.23.1440.877@0.23.1440.877" timestamp="1607308342799" />
+    <state width="1772" height="450" key="GridCell.Tab.0.center" timestamp="1607327127557">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1878" height="311" key="GridCell.Tab.0.center/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607236943769" />
+    <state width="1772" height="450" key="GridCell.Tab.0.center/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327127557" />
     <state width="1307" height="199" key="GridCell.Tab.0.center/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062854379" />
-    <state width="1400" height="230" key="GridCell.Tab.0.center/0.23.1440.877@0.23.1440.877" timestamp="1607029018197" />
-    <state width="1878" height="311" key="GridCell.Tab.0.left" timestamp="1607236943769">
+    <state width="1446" height="261" key="GridCell.Tab.0.center/0.23.1440.877@0.23.1440.877" timestamp="1607308342797" />
+    <state width="1772" height="450" key="GridCell.Tab.0.left" timestamp="1607327127556">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1878" height="311" key="GridCell.Tab.0.left/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607236943769" />
+    <state width="1772" height="450" key="GridCell.Tab.0.left/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327127556" />
     <state width="1307" height="199" key="GridCell.Tab.0.left/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062854379" />
-    <state width="1400" height="230" key="GridCell.Tab.0.left/0.23.1440.877@0.23.1440.877" timestamp="1607029018196" />
-    <state width="1878" height="311" key="GridCell.Tab.0.right" timestamp="1607236943770">
+    <state width="1446" height="261" key="GridCell.Tab.0.left/0.23.1440.877@0.23.1440.877" timestamp="1607308342796" />
+    <state width="1772" height="450" key="GridCell.Tab.0.right" timestamp="1607327127559">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1878" height="311" key="GridCell.Tab.0.right/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607236943770" />
+    <state width="1772" height="450" key="GridCell.Tab.0.right/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327127559" />
     <state width="1307" height="199" key="GridCell.Tab.0.right/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062854380" />
-    <state width="1400" height="230" key="GridCell.Tab.0.right/0.23.1440.877@0.23.1440.877" timestamp="1607029018197" />
-    <state width="1878" height="311" key="GridCell.Tab.1.bottom" timestamp="1607236943774">
+    <state width="1446" height="261" key="GridCell.Tab.0.right/0.23.1440.877@0.23.1440.877" timestamp="1607308342798" />
+    <state width="1772" height="450" key="GridCell.Tab.1.bottom" timestamp="1607327119596">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1878" height="311" key="GridCell.Tab.1.bottom/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607236943774" />
+    <state width="1772" height="450" key="GridCell.Tab.1.bottom/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327119596" />
     <state width="1307" height="199" key="GridCell.Tab.1.bottom/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062843380" />
-    <state width="1400" height="230" key="GridCell.Tab.1.bottom/0.23.1440.877@0.23.1440.877" timestamp="1607029016305" />
-    <state width="1878" height="311" key="GridCell.Tab.1.center" timestamp="1607236943774">
+    <state width="1446" height="261" key="GridCell.Tab.1.bottom/0.23.1440.877@0.23.1440.877" timestamp="1607308345634" />
+    <state width="1772" height="450" key="GridCell.Tab.1.center" timestamp="1607327119595">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1878" height="311" key="GridCell.Tab.1.center/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607236943774" />
+    <state width="1772" height="450" key="GridCell.Tab.1.center/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327119595" />
     <state width="1307" height="199" key="GridCell.Tab.1.center/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062843379" />
-    <state width="1400" height="230" key="GridCell.Tab.1.center/0.23.1440.877@0.23.1440.877" timestamp="1607029016304" />
-    <state width="1878" height="311" key="GridCell.Tab.1.left" timestamp="1607236943773">
+    <state width="1446" height="261" key="GridCell.Tab.1.center/0.23.1440.877@0.23.1440.877" timestamp="1607308345633" />
+    <state width="1772" height="450" key="GridCell.Tab.1.left" timestamp="1607327119595">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1878" height="311" key="GridCell.Tab.1.left/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607236943773" />
+    <state width="1772" height="450" key="GridCell.Tab.1.left/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327119595" />
     <state width="1307" height="199" key="GridCell.Tab.1.left/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062843379" />
-    <state width="1400" height="230" key="GridCell.Tab.1.left/0.23.1440.877@0.23.1440.877" timestamp="1607029016304" />
-    <state width="1878" height="311" key="GridCell.Tab.1.right" timestamp="1607236943774">
+    <state width="1446" height="261" key="GridCell.Tab.1.left/0.23.1440.877@0.23.1440.877" timestamp="1607308345633" />
+    <state width="1772" height="450" key="GridCell.Tab.1.right" timestamp="1607327119595">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1878" height="311" key="GridCell.Tab.1.right/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607236943774" />
+    <state width="1772" height="450" key="GridCell.Tab.1.right/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327119595" />
     <state width="1307" height="199" key="GridCell.Tab.1.right/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062843380" />
-    <state width="1400" height="230" key="GridCell.Tab.1.right/0.23.1440.877@0.23.1440.877" timestamp="1607029016305" />
+    <state width="1446" height="261" key="GridCell.Tab.1.right/0.23.1440.877@0.23.1440.877" timestamp="1607308345634" />
     <state x="379" y="-815" width="894" height="815" key="search.everywhere.popup" timestamp="1606085729895">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
@@ -192,8 +185,8 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/twoboxTask/twobox_main.py</url>
-          <line>173</line>
-          <option name="timeStamp" value="140" />
+          <line>328</line>
+          <option name="timeStamp" value="152" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -207,6 +200,6 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/IRC_torch$onebox_main.coverage" NAME="onebox_main Coverage Results" MODIFIED="1606119290858" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/oneboxTask" />
-    <SUITE FILE_PATH="coverage/IRC_torch$twobox_main.coverage" NAME="twobox_main Coverage Results" MODIFIED="1607234510450" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/twoboxTask" />
+    <SUITE FILE_PATH="coverage/IRC_torch$twobox_main.coverage" NAME="twobox_main Coverage Results" MODIFIED="1607326554960" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/twoboxTask" />
   </component>
 </project>

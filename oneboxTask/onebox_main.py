@@ -173,7 +173,7 @@ def main():
     # IRC_monkey1.IRC_batch(obsN,
     #                       lr=LR, eps=EPS, batch_size = 1, shuffle = False)
     # print('total time = ', time.time() - start_time1)
-    # print(IRC_monkey1.log_likelihood_all)
+    # print(IRC_monkey1.log_likelihood_traj)
     # print('\n\n')
 
     #print(pointIni)

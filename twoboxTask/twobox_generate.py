@@ -5,7 +5,7 @@ from datetime import datetime
 #import numpy as np
 
 def twobox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr, na, nl, discount,
-                policy, belief1_ini=0, belief2_ini=0, rew_ini=0):
+                policy, belief1_ini, belief2_ini, rew_ini, loc_ini):
 
     datestring = datetime.strftime(datetime.now(), '%m%d%Y(%H%M)')  # current time used to set file name
 
@@ -35,7 +35,7 @@ def twobox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
     N = sample_number
 
     twoboxdata = twobox_generate(discount, nq, nr, na, nl, parameters, parameters_exp, T, N)
-    twoboxdata.dataGenerate_sfm(belief1_ini=0, rew_ini=0, belief2_ini=0, loc_ini=0)
+    twoboxdata.data_generate(policy, belief1_ini, belief2_ini, rew_ini, loc_ini)
 
     action = twoboxdata.action
     location = twoboxdata.location
@@ -47,10 +47,10 @@ def twobox_data(parameters, parameters_exp, sample_length, sample_number, nq, nr
 
     # sampleNum * sampleTime * dim of observations(=3 here, action, reward, location)
     # organize data
-    obsN = np.dstack([action, reward, location])  # includes the action and the observable states
-    latN = np.dstack([belief1, belief2])
-    truthN = np.dstack([trueState1, trueState2])
-    dataN = np.dstack([obsN, latN, truthN])
+    obsN = torch.cat((action, reward, location), dim = -1)  # includes the action and the observable states
+    latN = torch.cat((belief1, belief2), dim = -1)
+    truthN = torch.cat((trueState1, trueState2), dim = -1)
+    dataN = torch.cat((obsN, latN, truthN), dim = -1)
 
     path = os.getcwd()
     ### write data to file
@@ -106,15 +106,15 @@ class twobox_generate(twoboxMDP):
         self.sampleNum = sampleNum
         self.sampleTime = sampleTime
 
-        self.action = np.empty((self.sampleNum, self.sampleTime), int)  # initialize action, assumed to be optimal
-        self.hybrid = np.empty((self.sampleNum, self.sampleTime), int)  # initialize hybrid state.
+        self.action = [] #np.empty((self.sampleNum, self.sampleTime), int)  # initialize action, assumed to be optimal
+        self.hybrid = [] #np.empty((self.sampleNum, self.sampleTime), int)  # initialize hybrid state.
         # Here it is the joint state of reward and belief
-        self.location = np.empty((sampleNum, sampleTime), int)  # initialize location state
-        self.belief1 = np.empty((self.sampleNum, self.sampleTime), int)
-        self.belief2 = np.empty((self.sampleNum, self.sampleTime), int)  # initialize hidden state, belief state
-        self.reward = np.empty((self.sampleNum, self.sampleTime), int)  # initialize reward state
-        self.trueState1 = np.zeros((self.sampleNum, self.sampleTime))
-        self.trueState2 = np.zeros((self.sampleNum, self.sampleTime))
+        self.location = [] #np.empty((sampleNum, sampleTime), int)  # initialize location state
+        self.belief1 = [] #np.empty((self.sampleNum, self.sampleTime), int)
+        self.belief2 = [] #np.empty((self.sampleNum, self.sampleTime), int)  # initialize hidden state, belief state
+        self.reward = [] #np.empty((self.sampleNum, self.sampleTime), int)  # initialize reward state
+        self.trueState1 = [] #np.zeros((self.sampleNum, self.sampleTime))
+        self.trueState2 = [] #np.zeros((self.sampleNum, self.sampleTime))
 
         self.setupMDP()
         self.solveMDP_op()
@@ -252,7 +252,7 @@ class twobox_generate(twoboxMDP):
     #
 
 
-    def dataGenerate_sfm(self, policy, belief1_ini, rew_ini, belief2_ini, loc_ini):
+    def data_generate(self, policy, belief1_ini, belief2_ini, rew_ini, loc_ini):
 
         food_missed = self.parameters['food_missed']  # available food dropped back into box after button press
         app_rate1 = self.parameters['app_rate1']  # reward becomes available
@@ -289,14 +289,26 @@ class twobox_generate(twoboxMDP):
             self.trueState1.append([])
             self.trueState2.append([])
 
+
             if rew_ini == 'rand':
                 rew_ini = torch.randint(self.nr, (1,)).long()
+            else:
+                rew_ini = torch.LongTensor([rew_ini]).long()
+
             if loc_ini == 'rand':
-                rew_ini = torch.randint(self.nl, (1,)).long()
+                loc_ini = torch.randint(self.nl, (1,)).long()
+            else:
+                loc_ini = torch.LongTensor([loc_ini]).long()
+
             if belief1_ini == 'rand':
                 belief1_ini = torch.randint(self.nq, (1,)).long()
+            else:
+                belief1_ini = torch.LongTensor([belief1_ini]).long()
+
             if belief2_ini == 'rand':
                 belief2_ini = torch.randint(self.nq, (1,)).long()
+            else:
+                belief2_ini = torch.LongTensor([belief2_ini]).long()
 
             for t in range(self.sampleTime):
                 if t == 0:
@@ -327,7 +339,7 @@ class twobox_generate(twoboxMDP):
 
                 else:
                     if self.action[i][- 1] == pb and self.location[i][- 1] == 0:
-                        self.action[i][- 1] = a0  # cannot press button at location 0
+                        self.action[i][- 1] = torch.LongTensor([a0]).long()  # cannot press button at location 0
 
                     # variables evolve with dynamics
                     if self.action[i][- 1] != pb:
@@ -366,14 +378,14 @@ class twobox_generate(twoboxMDP):
                         else:
                             statetemp1 = 1 - torch.bernoulli(disapp_rate1_experiment).long()
 
-                        if self.trueState2[i, t - 1] == 0:
+                        if self.trueState2[i][- 1] == 0:
                             statetemp2 = torch.bernoulli(app_rate2_experiment).long()
                         else:
                             statetemp2 = 1 - torch.bernoulli(disapp_rate2_experiment).long()
                         #### for pb action, wait for usual time and then pb  #############
 
                         if self.location[i][-1] == 1:  # consider location 1 case
-                            self.belief2[i].append(torch.multinomial(Tb2[:, self.belief2[i, t - 1]].squeeze(), 1,
+                            self.belief2[i].append(torch.multinomial(Tb2[:, self.belief2[i][- 1]].squeeze(), 1,
                                                                      replacement=True))
                             if statetemp2 == 0:
                                 self.trueState2[i].append(torch.bernoulli(app_rate2_experiment).long())
@@ -390,7 +402,7 @@ class twobox_generate(twoboxMDP):
 
                             if statetemp1 == 0:
                                 #self.trueState1[i, t] = self.trueState1[i, t - 1]
-                                self.trueState1.append(statetemp1)
+                                self.trueState1[i].append(statetemp1)
                                 # if true world is zero, pb does not change real state
                                 # assume that the real state does not change during button press
                                 self.belief1[i].append(torch.LongTensor([0]))  # after open the box, the animal is sure that there is no food there
@@ -409,10 +421,10 @@ class twobox_generate(twoboxMDP):
                                         # self.reward[i, t] = np.random.binomial(1, 1 - food_consumed.detach().numpy())
                                 else:  # not dropped back
                                     self.belief1[i].append(torch.LongTensor([0]).long())
-                                    self.reward1[i].append(torch.LongTensor([1]).long())
+                                    self.reward[i].append(torch.LongTensor([1]).long())
 
-                        if self.location[i, t] == 2:  # consider location 2 case
-                            self.belief1[i].append(torch.multinomial(Tb1[:, self.belief1[i, t - 1]].squeeze(), 1,
+                        if self.location[i][-1] == 2:  # consider location 2 case
+                            self.belief1[i].append(torch.multinomial(Tb1[:, self.belief1[i][- 1]].squeeze(), 1,
                                                                      replacement=True))
                             # belief on box 1 is independent on box 2
                             if statetemp1 == 0:
@@ -421,7 +433,7 @@ class twobox_generate(twoboxMDP):
                                 self.trueState1[i].append(1 - torch.bernoulli(disapp_rate1_experiment).long())
 
                             if statetemp2 == 0:
-                                self.trueState2.append(statetemp2)
+                                self.trueState2[i].append(statetemp2)
                                 # if true world is zero, pb does not change real state
                                 # assume that the real state does not change during button press
                                 self.belief2[i].append(torch.LongTensor([0]))   # after open the box, the animal is sure that there is no food there
@@ -440,7 +452,7 @@ class twobox_generate(twoboxMDP):
                                         # self.reward[i, t] = np.random.binomial(1, 1 - food_consumed.detach().numpy())
                                 else:  # not dropped back
                                     self.belief2[i].append(torch.LongTensor([0]).long())
-                                    self.reward2[i].append(torch.LongTensor([1]).long())
+                                    self.reward[i].append(torch.LongTensor([1]).long())
 
 
                     self.hybrid[i].append(self.location[i][-1] * (self.nq * self.nr * self.nq) + self.belief1[i][-1] * (self.nr * self.nq) \
@@ -452,10 +464,28 @@ class twobox_generate(twoboxMDP):
                         # self.action[i, t] = self._choose_action(np.vstack(self.softpolicy).T[self.hybrid[i, t]])
                         self.action[i].append(self._choose_action(self.softpolicy.t()[self.hybrid[i][-1]].squeeze()))
 
-    def _chooseAction(self, pvec):
+            self.action[-1] = torch.stack(self.action[-1])
+            self.hybrid[-1] = torch.stack(self.hybrid[-1])
+            self.belief1[-1] = torch.stack(self.belief1[-1])
+            self.belief2[-1] = torch.stack(self.belief2[-1])
+            self.reward[-1] = torch.stack(self.reward[-1])
+            self.location[-1] = torch.stack(self.location[-1])
+            self.trueState1[-1] = torch.stack(self.trueState1[-1])
+            self.trueState2[-1] = torch.stack(self.trueState2[-1])
+
+        self.action = torch.stack(self.action)
+        self.hybrid = torch.stack(self.hybrid)
+        self.belief1 = torch.stack(self.belief1)
+        self.belief2 = torch.stack(self.belief2)
+        self.reward = torch.stack(self.reward)
+        self.location = torch.stack(self.location)
+        self.trueState1 = torch.stack(self.trueState1)
+        self.trueState2 = torch.stack(self.trueState2)
+
+
+    def _choose_action(self, pvec):
         # Generate action according to multinomial distribution
-        stattemp = np.random.multinomial(1, pvec)
-        return np.argmax(stattemp)
+        return torch.multinomial(pvec, 1, replacement=True)
 
 
 

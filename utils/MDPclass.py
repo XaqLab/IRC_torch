@@ -175,8 +175,9 @@ class MDP(object):
         #     expo[:, i] = expo[:, i] / torch.max(expo[:, i])  # divide all the exp value with the max,
         #     # allow the softpolicy approximate the optimal optpolicy closely
         #     softpolicy[:, i] = expo[:, i] / torch.sum(expo[:, i])
-        expQ =  torch.exp(Q / temperature)
-        expQ = expQ / expQ.max(dim = 0)[0]
+        Qn = Q - Q.max(dim = 0)[0]
+        expQ =  torch.exp(Qn / temperature)
+        #expQ = expQ / expQ.max(dim = 0)[0]
         softpolicy = expQ / expQ.sum(dim = 0)
 
         ###return (softpolicy, _np.sum(Q * softpolicy, axis = 0))

@@ -25,7 +25,7 @@ class onebox_IRC_torch():
     # def IRC_randomProj(self, obs, randProjNum = 1):
     #     for l in range(randProjNum):
     #         transformer = random_projection.GaussianRandomProjection(n_components=2)
-    #         transformer.fit_transform(self.point_all)
+    #         transformer.fit_transform(self.point_traj)
     #         projectionMatRand = transformer.components_
     #         print(projectionMatRand)
     #
@@ -50,7 +50,7 @@ class onebox_IRC_torch():
     #             for j in range(N2):
     #                 vValue[j] = step2 * (j) + vOffset
     #
-    #                 para_slicePoints = self.point_all[-1] + uValue[i] * projectionMatRand[0] + \
+    #                 para_slicePoints = self.point_traj[-1] + uValue[i] * projectionMatRand[0] + \
     #                                    vValue[j] * projectionMatRand[1]
     #                 para_slice.append(para_slicePoints)
     #                 para = np.copy(para_slicePoints)
@@ -76,9 +76,9 @@ class onebox_IRC_torch():
     #         max_point = para_slice[max_point_idx[1][0] * N2 + max_point_idx[0][0]]
     #         print(np.max(Loglikelihood), max_point)
     #
-    #         if np.max(Loglikelihood) > self.log_likelihood_all[-1]:
-    #             self.point_all.append(max_point)
-    #             self.log_likelihood_all.append(np.max(Loglikelihood))
+    #         if np.max(Loglikelihood) > self.log_likelihood_traj[-1]:
+    #             self.point_traj.append(max_point)
+    #             self.log_likelihood_traj.append(np.max(Loglikelihood))
     #
     def likelihood_tensor_ave(self, obs):
         """
@@ -160,8 +160,8 @@ class onebox_IRC_torch():
     #         optimizer.zero_grad()
     #         loss = - self.likelihood_tensor(obs)
     #
-    #         self.point_all.append(self.para)
-    #         self.log_likelihood_all.append(loss)
+    #         self.point_traj.append(self.para)
+    #         self.log_likelihood_traj.append(loss)
     #         # print(self.para)
     #         # print(-loss)
     #
@@ -169,22 +169,22 @@ class onebox_IRC_torch():
     #         # print([p.grad for k, p in self.para.items()], '\n\n')
     #         optimizer.step()
     #
-    #         if len(self.log_likelihood_all) >= 2 and \
-    #                 torch.abs(self.log_likelihood_all[-1] - self.log_likelihood_all[-2]) < eps:
+    #         if len(self.log_likelihood_traj) >= 2 and \
+    #                 torch.abs(self.log_likelihood_traj[-1] - self.log_likelihood_traj[-2]) < eps:
     #             break
     #         n_epochs += 1
 
 
     # def contour_LL(self, obs, step1 = 0.02, step2 = 0.02, N1 = 6, N2 = 6, proj = 'PCA'):
-    #     projectionMat = np.zeros((2, len(self.point_all[-1])))
+    #     projectionMat = np.zeros((2, len(self.point_traj[-1])))
     #
     #     if proj == 'rand':
     #         transformer = random_projection.GaussianRandomProjection(n_components=2)
-    #         transformer.fit_transform(self.point_all)
+    #         transformer.fit_transform(self.point_traj)
     #         projectionMat = transformer.components_
     #     elif proj == 'PCA':
     #         pca = PCA(n_components=2)
-    #         pca.fit(np.unique((self.point_all - self.point_all[-1]), axis=0))
+    #         pca.fit(np.unique((self.point_traj - self.point_traj[-1]), axis=0))
     #         projectionMat = pca.components_
     #
     #     uOffset = - step1 * N1 / 2
@@ -202,7 +202,7 @@ class onebox_IRC_torch():
     #         for j in range(N2):
     #             vValue[j] = step2 * (j) + vOffset
     #
-    #             para_slicePoints = self.point_all[-1] + uValue[i] * projectionMat[0] + vValue[j] * projectionMat[1]
+    #             para_slicePoints = self.point_traj[-1] + uValue[i] * projectionMat[0] + vValue[j] * projectionMat[1]
     #             para_slice.append(para_slicePoints)
     #             para = np.copy(para_slicePoints)
     #             #para[2] = 0
@@ -231,7 +231,7 @@ class onebox_IRC_torch():
     #         self.uValue = uValue
     #         self.vValue = vValue
     #         self.contour_LL_mesh = contour_LL_mesh
-    #         self.point_2d = projectionMat.dot((self.point_all - self.point_all[-1]).T).T
+    #         self.point_2d = projectionMat.dot((self.point_traj - self.point_traj[-1]).T).T
     #         self.projectionMat = projectionMat
     #
     # def plot_contour_LL(self):
