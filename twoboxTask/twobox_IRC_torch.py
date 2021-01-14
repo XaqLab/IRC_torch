@@ -55,8 +55,7 @@ class twobox_IRC_torch():
         twoboxHMM = HMMtwobox(ThA, softpolicy, pi)
 
         log_likelihood = twoboxHMM.log_likelihood(obs, ThA, softpolicy)
-        #log_likelihood /= len(obs)
-
+        #return softpolicy[0, 0]
         return log_likelihood
 
     def IRC_batch(self, obsN, lr, eps, batch_size, shuffle):
@@ -72,20 +71,24 @@ class twobox_IRC_torch():
                 loss = - self.likelihood_tensor_ave(obsN_minibatch)
                 loss_whole += loss
 
-                self.point_traj.append(self.para)
-                self.log_likelihood_traj.append(loss)
-                #print(self.para)
+                para_temp = self.para.copy()
+                for k, v in para_temp.items():
+                    para_temp[k] = v.clone().detach()
+
+                self.point_traj.append(para_temp)
+                self.log_likelihood_traj.append(-loss)
+                print(self.para)
                 #print(-loss)
 
                 optimizer.zero_grad()
                 loss.backward()
-                #print(i, [p.grad for k, p in self.para.items()])
+                print('batch-', i+1, [p.grad for k, p in self.para.items()])
                 optimizer.step()
-                #print(self.para)
-                #print('\n\n')
+                print("After update, the parameters are: \n", self.para)
+                print('\n\n')
 
 
-            if obsN.shape != 1:
+            if obsN.shape[0] != 1:
                 self.log_likelihood_whole.append(loss_whole)
 
                 print("epoch: %d, loss: %1.3f" % (epoch + 1, loss_whole))
@@ -96,7 +99,8 @@ class twobox_IRC_torch():
             else:
                 print("epoch: %d, loss: %1.3f" % (epoch + 1, loss))
 
-                if len(self.log_likelihood_traj) >= 2 and torch.abs(self.log_likelihood_traj[-1] - self.log_likelihood_traj[-2]) < eps:
+                if len(self.log_likelihood_traj) >= 2 and torch.abs(
+                        self.log_likelihood_traj[-1] - self.log_likelihood_traj[-2]) < eps:
                     break
 
             if epoch >= 200:
@@ -137,38 +141,32 @@ class twobox_IRC_torch():
                 para_slice.append(para_slicePoints)
                 para_array = np.copy(para_slicePoints)
                 para = self.para.copy()
-                for i, item in enumerate(para.items()):
-                    para[item[0]] = torch.tensor(para_array[i])
+                for k, item in enumerate(self.para.items()):
+                    para[item[0]] = torch.tensor(para_array[k])
 
                 twobox = twoboxMDP(self.discount, self.nq, self.nr, self.na, self.nl, para)
                 twobox.setupMDP()
 
-                if np.any(twobox.ThA < 0) == True:
+                if torch.any(twobox.ThA < 0) == True:
                     Qaux[j, i] = np.nan
-                    # Qaux2[j, i] = np.nan
-                    # Qaux3[j, i] = np.nan
                 else:
                     twobox.solveMDP_sfm()
                     ThA = twobox.ThA
                     softpolicy = twobox.softpolicy
-                    pi = np.ones(self.nq * self.nq) / self.nq / self.nq  # initialize the estimation of the belief state
+                    pi = torch.ones(self.nq * self.nq) / self.nq / self.nq  # initialize the estimation of the belief state
                     twoboxHMM = HMMtwobox(ThA, softpolicy, pi)
 
-                    for i in range(obsN.shape[0]):
-                        Qaux[j, i] += twoboxHMM.log_likelihood(obsN[i], ThA, softpolicy)  #given latent state
-                    # Qaux[j, i] = twoboxHMM.log_likelihood(obs, ThA, policy)  #given latent state
-                    # Qaux2[j, i] = twoHMM.computeQaux(obsN, ThA, softpolicy)
-                    # Qaux3[j, i] = twoHMM.latent_entr(obsN)
+                    for n in range(obsN.shape[0]):
+                        Qaux[j, i] += twoboxHMM.log_likelihood(obsN[n], ThA, softpolicy)  #given latent state
 
+        contour_LL_mesh = Qaux
+        contour_LL_mesh = np.nan_to_num(contour_LL_mesh, nan = np.nanmean(contour_LL_mesh))
 
-            contour_LL_mesh = Qaux
-            contour_LL_mesh = np.nan_to_num(contour_LL_mesh, nan = np.nanmean(contour_LL_mesh))
-
-            self.uValue = uValue
-            self.vValue = vValue
-            self.contour_LL_mesh = contour_LL_mesh
-            self.point_2d = projectionMat.dot((self.point_traj - self.point_traj[-1]).T).T
-            self.projectionMat = projectionMat
+        self.uValue = uValue
+        self.vValue = vValue
+        self.contour_LL_mesh = contour_LL_mesh
+        self.point_2d = projectionMat.dot((ptraj_array - ptraj_array[-1]).T).T
+        self.projectionMat = projectionMat
 
     def plot_contour_LL(self):
         # project the trajectories onto the plane
@@ -180,7 +178,7 @@ class twobox_IRC_torch():
                                np.max(self.contour_LL_mesh), 50), cmap='jet')
 
         plt.plot(self.point_2d[:, 0], self.point_2d[:, 1], marker='.', color='b')  # projected trajectories
-        # plt.plot(point_2d[-1, 0], point_2d[-1, 1], marker='*', color = 'g', markersize = 10)        # final point
+        plt.plot(self.point_2d[-1, 0], self.point_2d[-1, 1], marker='*', color = 'g', markersize = 10) # final point
         # plt.plot(true_2d[0], true_2d[1], marker='o', color = 'g')           # true
 
         # ax.grid()

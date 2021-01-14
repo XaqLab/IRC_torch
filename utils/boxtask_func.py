@@ -8,6 +8,10 @@ from scipy import optimize
 import torch
 import math
 
+
+def inv_sig(x):
+    return torch.log(x/(1-x))
+
 # def kron(a, b):
 #     """
 #     Kronecker product of matrices a and b with leading batch dimensions.

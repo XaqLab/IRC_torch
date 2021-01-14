@@ -7,10 +7,10 @@ class HMMtwobox:
         self.obs_emission = obs_emission
         self.latent_ini = latent_ini
 
-        self.S = len(self.latent_ini)  # number of possible values of the hidden state
+        self.S = len(self.latent_ini)  # number of possible values of the hidden state (2 boxes)
         self.R = 2
         self.L = 3
-        self.Ss = int(sqrt(self.S))
+        self.Ss = int(sqrt(self.S))   # # number of possible values of the hidden state (for 1 box)
 
         self.latent_dim = len(self.latent_ini)  # number of hidden state
 
@@ -230,6 +230,7 @@ class HMMtwobox:
         lat_ento = self.latent_entr(obs)
 
         return lat_ento + CDLL
+        #return lat_ento
 
 
     def computeQaux(self, obs, Anew, Bnew):

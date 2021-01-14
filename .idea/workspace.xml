@@ -2,16 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="df70ce86-e03a-449b-8a9a-e165588d1986" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/monkeydata.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Untitled.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_IRC_torch.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_IRC_torch.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oneboxTask/onebox_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/oneboxTask/onebox_main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/twoboxTask/Data/12052020(0153)_dataN_twobox.pkl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/twoboxTask/Data/12052020(0153)_para_twobox.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/twoboxTask/twobox_HMM.py" beforeDir="false" afterPath="$PROJECT_DIR$/twoboxTask/twobox_HMM.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/twoboxTask/twobox_IRC_torch.py" beforeDir="false" afterPath="$PROJECT_DIR$/twoboxTask/twobox_IRC_torch.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/twoboxTask/twobox_generate.py" beforeDir="false" afterPath="$PROJECT_DIR$/twoboxTask/twobox_generate.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/twoboxTask/twobox_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/twoboxTask/twobox_main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/MDPclass.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/MDPclass.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/boxtask_func.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/boxtask_func.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,7 +43,29 @@
       <recent name="$PROJECT_DIR$/twoboxTask/Data" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.twobox_main">
+  <component name="RunManager" selected="Python.monkeydata">
+    <configuration name="monkeydata" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="IRC_torch" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/monkeydata.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="onebox_main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="IRC_torch" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -94,6 +112,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.monkeydata" />
         <item itemvalue="Python.twobox_main" />
         <item itemvalue="Python.onebox_main" />
       </list>
@@ -109,7 +128,13 @@
       <updated>1604595234088</updated>
       <workItem from="1604595235446" duration="47465000" />
       <workItem from="1605641402186" duration="43547000" />
-      <workItem from="1605908231913" duration="89626000" />
+      <workItem from="1605908231913" duration="93899000" />
+      <workItem from="1608217462218" duration="1011000" />
+      <workItem from="1608226244809" duration="4264000" />
+      <workItem from="1608673606338" duration="9000" />
+      <workItem from="1609311800458" duration="504000" />
+      <workItem from="1610003321515" duration="2961000" />
+      <workItem from="1610435932706" duration="25804000" />
     </task>
     <servers />
   </component>
@@ -117,6 +142,10 @@
     <option name="version" value="3" />
   </component>
   <component name="WindowStateProjectService">
+    <state x="453" y="270" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1610003359609">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="453" y="270" key="#com.intellij.fileTypes.FileTypeChooser/0.23.1440.877@0.23.1440.877" timestamp="1610003359609" />
     <state x="380" y="51" key="CommitChangelistDialog2" timestamp="1607307939053">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
@@ -126,54 +155,54 @@
       <screen x="0" y="23" width="1440" height="877" />
     </state>
     <state width="862" height="466" key="DebuggerActiveHint/0.23.1440.877@0.23.1440.877" timestamp="1605898196945" />
-    <state width="1772" height="450" key="GridCell.Tab.0.bottom" timestamp="1607327127561">
+    <state width="1878" height="412" key="GridCell.Tab.0.bottom" timestamp="1610640717622">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1772" height="450" key="GridCell.Tab.0.bottom/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327127561" />
-    <state width="1307" height="199" key="GridCell.Tab.0.bottom/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062854380" />
-    <state width="1446" height="261" key="GridCell.Tab.0.bottom/0.23.1440.877@0.23.1440.877" timestamp="1607308342799" />
-    <state width="1772" height="450" key="GridCell.Tab.0.center" timestamp="1607327127557">
+    <state width="1878" height="412" key="GridCell.Tab.0.bottom/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1610640717622" />
+    <state width="1398" height="328" key="GridCell.Tab.0.bottom/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1608231327288" />
+    <state width="1398" height="361" key="GridCell.Tab.0.bottom/0.23.1440.877@0.23.1440.877" timestamp="1610581401144" />
+    <state width="1878" height="412" key="GridCell.Tab.0.center" timestamp="1610640717621">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1772" height="450" key="GridCell.Tab.0.center/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327127557" />
-    <state width="1307" height="199" key="GridCell.Tab.0.center/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062854379" />
-    <state width="1446" height="261" key="GridCell.Tab.0.center/0.23.1440.877@0.23.1440.877" timestamp="1607308342797" />
-    <state width="1772" height="450" key="GridCell.Tab.0.left" timestamp="1607327127556">
+    <state width="1878" height="412" key="GridCell.Tab.0.center/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1610640717621" />
+    <state width="1398" height="328" key="GridCell.Tab.0.center/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1608231327287" />
+    <state width="1398" height="361" key="GridCell.Tab.0.center/0.23.1440.877@0.23.1440.877" timestamp="1610581401142" />
+    <state width="1878" height="412" key="GridCell.Tab.0.left" timestamp="1610640717620">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1772" height="450" key="GridCell.Tab.0.left/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327127556" />
-    <state width="1307" height="199" key="GridCell.Tab.0.left/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062854379" />
-    <state width="1446" height="261" key="GridCell.Tab.0.left/0.23.1440.877@0.23.1440.877" timestamp="1607308342796" />
-    <state width="1772" height="450" key="GridCell.Tab.0.right" timestamp="1607327127559">
+    <state width="1878" height="412" key="GridCell.Tab.0.left/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1610640717620" />
+    <state width="1398" height="328" key="GridCell.Tab.0.left/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1608231327287" />
+    <state width="1398" height="361" key="GridCell.Tab.0.left/0.23.1440.877@0.23.1440.877" timestamp="1610581401142" />
+    <state width="1878" height="412" key="GridCell.Tab.0.right" timestamp="1610640717622">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1772" height="450" key="GridCell.Tab.0.right/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327127559" />
-    <state width="1307" height="199" key="GridCell.Tab.0.right/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062854380" />
-    <state width="1446" height="261" key="GridCell.Tab.0.right/0.23.1440.877@0.23.1440.877" timestamp="1607308342798" />
-    <state width="1772" height="450" key="GridCell.Tab.1.bottom" timestamp="1607327119596">
+    <state width="1878" height="412" key="GridCell.Tab.0.right/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1610640717622" />
+    <state width="1398" height="328" key="GridCell.Tab.0.right/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1608231327288" />
+    <state width="1398" height="361" key="GridCell.Tab.0.right/0.23.1440.877@0.23.1440.877" timestamp="1610581401143" />
+    <state width="1878" height="412" key="GridCell.Tab.1.bottom" timestamp="1610640683494">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1772" height="450" key="GridCell.Tab.1.bottom/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327119596" />
-    <state width="1307" height="199" key="GridCell.Tab.1.bottom/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062843380" />
-    <state width="1446" height="261" key="GridCell.Tab.1.bottom/0.23.1440.877@0.23.1440.877" timestamp="1607308345634" />
-    <state width="1772" height="450" key="GridCell.Tab.1.center" timestamp="1607327119595">
+    <state width="1878" height="412" key="GridCell.Tab.1.bottom/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1610640683494" />
+    <state width="1398" height="328" key="GridCell.Tab.1.bottom/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1608231320084" />
+    <state width="1398" height="361" key="GridCell.Tab.1.bottom/0.23.1440.877@0.23.1440.877" timestamp="1610581401148" />
+    <state width="1878" height="412" key="GridCell.Tab.1.center" timestamp="1610640683493">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1772" height="450" key="GridCell.Tab.1.center/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327119595" />
-    <state width="1307" height="199" key="GridCell.Tab.1.center/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062843379" />
-    <state width="1446" height="261" key="GridCell.Tab.1.center/0.23.1440.877@0.23.1440.877" timestamp="1607308345633" />
-    <state width="1772" height="450" key="GridCell.Tab.1.left" timestamp="1607327119595">
+    <state width="1878" height="412" key="GridCell.Tab.1.center/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1610640683493" />
+    <state width="1398" height="328" key="GridCell.Tab.1.center/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1608231320084" />
+    <state width="1398" height="361" key="GridCell.Tab.1.center/0.23.1440.877@0.23.1440.877" timestamp="1610581401146" />
+    <state width="1878" height="412" key="GridCell.Tab.1.left" timestamp="1610640683493">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1772" height="450" key="GridCell.Tab.1.left/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327119595" />
-    <state width="1307" height="199" key="GridCell.Tab.1.left/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062843379" />
-    <state width="1446" height="261" key="GridCell.Tab.1.left/0.23.1440.877@0.23.1440.877" timestamp="1607308345633" />
-    <state width="1772" height="450" key="GridCell.Tab.1.right" timestamp="1607327119595">
+    <state width="1878" height="412" key="GridCell.Tab.1.left/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1610640683493" />
+    <state width="1398" height="328" key="GridCell.Tab.1.left/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1608231320084" />
+    <state width="1398" height="361" key="GridCell.Tab.1.left/0.23.1440.877@0.23.1440.877" timestamp="1610581401145" />
+    <state width="1878" height="412" key="GridCell.Tab.1.right" timestamp="1610640683494">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
-    <state width="1772" height="450" key="GridCell.Tab.1.right/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1607327119595" />
-    <state width="1307" height="199" key="GridCell.Tab.1.right/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1607062843380" />
-    <state width="1446" height="261" key="GridCell.Tab.1.right/0.23.1440.877@0.23.1440.877" timestamp="1607308345634" />
+    <state width="1878" height="412" key="GridCell.Tab.1.right/0.23.1440.877/-114.-1057.1920.1057@-114.-1057.1920.1057" timestamp="1610640683494" />
+    <state width="1398" height="328" key="GridCell.Tab.1.right/0.23.1440.877/-114.-1057.1920.1057@0.23.1440.877" timestamp="1608231320084" />
+    <state width="1398" height="361" key="GridCell.Tab.1.right/0.23.1440.877@0.23.1440.877" timestamp="1610581401147" />
     <state x="379" y="-815" width="894" height="815" key="search.everywhere.popup" timestamp="1606085729895">
       <screen x="-114" y="-1057" width="1920" height="1057" />
     </state>
@@ -183,10 +212,20 @@
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="jupyter-line">
+          <url>notebook:///Users/zhengwei/Dropbox (Personal)/BCM/_Code/inversePOMDP/IRC_torch/IRCmonkey_crossSession-20201210.ipynb</url>
+          <line>669</line>
+          <option name="timeStamp" value="171" />
+        </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/twoboxTask/twobox_main.py</url>
-          <line>328</line>
-          <option name="timeStamp" value="152" />
+          <url>file://$PROJECT_DIR$/monkeydata.py</url>
+          <line>440</line>
+          <option name="timeStamp" value="196" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/monkeydata.py</url>
+          <line>437</line>
+          <option name="timeStamp" value="198" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -200,6 +239,7 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/IRC_torch$onebox_main.coverage" NAME="onebox_main Coverage Results" MODIFIED="1606119290858" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/oneboxTask" />
-    <SUITE FILE_PATH="coverage/IRC_torch$twobox_main.coverage" NAME="twobox_main Coverage Results" MODIFIED="1607326554960" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/twoboxTask" />
+    <SUITE FILE_PATH="coverage/IRC_torch$monkeydata.coverage" NAME="monkeydata Coverage Results" MODIFIED="1610640673636" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/IRC_torch$twobox_main.coverage" NAME="twobox_main Coverage Results" MODIFIED="1610606146937" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/twoboxTask" />
   </component>
 </project>

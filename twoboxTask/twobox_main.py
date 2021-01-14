@@ -1,14 +1,8 @@
 from __future__ import division
-from numpy import linalg as LA
-from twoboxTask.twobox import *
-from twoboxTask.twobox_HMM import *
 from twoboxTask.twobox_generate import *
 from twoboxTask.twobox_IRC_torch import *
 import pickle
-import sys
-from datetime import datetime
 import os
-import torch
 import matplotlib.pyplot as plt
 import collections
 import time
@@ -314,10 +308,53 @@ def main():
     """
     IRC
     """
-    obsN = torch.reshape(obsN, (1, -1, obsN.shape[-1]))
+    app_rate1_ini = 0.10385418
+    disapp_rate1_ini = .01
+    app_rate2_ini = 0.19612859
+    disapp_rate2_ini = .01
+    food_missed_ini = .1  # 0
+    food_consumed_ini = .9  # 1
+    belief_diffusion_ini = .1  # 0.03827322 # .1
+    policy_temperature_ini = .06  # 0.15768841  # .06
+    push_button_cost_ini = .2  # 0.40363519  # .2
+    grooming_reward_ini = .3  # 0.20094441  # .3
+    travel_cost_ini = .1  # 0.3033027  # .1
+    trip_prob_ini = .05
+    direct_prob_ini = 0.19538837  # .1
 
-    pointIni = parameters_agent
-    IRC_monkey = twobox_IRC_torch(discount, nq, nr, na, nl, pointIni)
+    app_rate1_ini = torch.autograd.Variable(torch.tensor([app_rate1_ini]), requires_grad=True)
+    disapp_rate1_ini = torch.autograd.Variable(torch.tensor([disapp_rate1_ini]), requires_grad=True)
+    app_rate2_ini = torch.autograd.Variable(torch.tensor([app_rate2_ini]), requires_grad=True)
+    disapp_rate2_ini = torch.autograd.Variable(torch.tensor([disapp_rate2_ini]), requires_grad=True)
+    food_missed_ini = torch.autograd.Variable(torch.tensor([food_missed_ini]), requires_grad=True)  # 0
+    food_consumed_ini = torch.autograd.Variable(torch.tensor([food_consumed_ini]), requires_grad=True)  # .99 #1
+    belief_diffusion_ini = torch.autograd.Variable(torch.tensor([belief_diffusion_ini]), requires_grad=True)  # .1
+    policy_temperature_ini = torch.autograd.Variable(torch.tensor([policy_temperature_ini]), requires_grad=True)  # .061
+    push_button_cost_ini = torch.autograd.Variable(torch.tensor([push_button_cost_ini]), requires_grad=True)  # .3
+    grooming_reward_ini = torch.autograd.Variable(torch.tensor([grooming_reward_ini]), requires_grad=True)  # .3
+    travel_cost_ini = torch.autograd.Variable(torch.tensor([travel_cost_ini]), requires_grad=True)  # .3
+    direct_prob_ini = torch.autograd.Variable(torch.tensor([direct_prob_ini]), requires_grad=True)  # .3
+    trip_prob_ini = torch.autograd.Variable(torch.tensor([trip_prob_ini]), requires_grad=True)  # .3
+
+    point_ini = collections.OrderedDict()
+    point_ini['food_missed'] = food_missed_ini
+    point_ini['app_rate1'] = app_rate1_ini
+    point_ini['disapp_rate1'] = disapp_rate1_ini
+    point_ini['app_rate2'] = app_rate2_ini
+    point_ini['disapp_rate2'] = disapp_rate2_ini
+    point_ini['food_consumed'] = food_consumed_ini
+    point_ini['push_button_cost'] = push_button_cost_ini
+    point_ini['belief_diffusion'] = belief_diffusion_ini
+    point_ini['policy_temperature'] = policy_temperature_ini
+    point_ini['direct_prob'] = direct_prob_ini
+    point_ini['trip_prob'] = trip_prob_ini
+    point_ini['grooming_reward'] = grooming_reward_ini
+    point_ini['travel_cost'] = travel_cost_ini
+
+    #pointIni = parameters_agent
+
+    obsN = torch.reshape(obsN, (1, -1, obsN.shape[-1]))
+    IRC_monkey = twobox_IRC_torch(discount, nq, nr, na, nl, point_ini)
     start_time = time.time()
     IRC_monkey.IRC_batch(obsN, lr=LR, eps=EPS, batch_size=BATCH_SIZE, shuffle=True)
     print('total time = ', time.time() - start_time)
