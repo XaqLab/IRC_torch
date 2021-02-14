@@ -188,7 +188,7 @@ class twoboxMDP:
 
         policy_temperature = self.parameters['policy_temperature']
 
-        vi = ValueIteration_sfmZW(self.ThA, self.R, self.discount, epsilon, niterations, initial_value)
+        vi = ValueIteration_sfmZW(self.ThA, self.R, self.discount, epsilon, niterations)
         vi.run(policy_temperature)
         self.Qsfm = self._QfromV(vi)   # shape na * number of state, use value to calculate Q value
         #self.softpolicy = np.array(vi.softpolicy)

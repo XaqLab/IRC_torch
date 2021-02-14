@@ -195,7 +195,8 @@ class HMMtwobox:
         Hpath.append(torch.zeros(self.latent_dim).unsqueeze(-1))
         #Hpath[:, 0] = 0
 
-        for t in range(1, T):
+        #for t in range(1, T):
+        for t in range(1, 381):
             lat_cond_t = torch.diag(alpha_scaled[:, t - 1]).matmul(self.state_transition[act[t - 1]
                                                                    ][torch.meshgrid(self._states(rew[t - 1], loc[t-1]),
                                                                                     self._states(rew[t],loc[t]))])
@@ -203,7 +204,7 @@ class HMMtwobox:
             lat_cond_t = lat_cond_t / (lat_cond_t.sum(dim=0) + 1 * (lat_cond_t.sum(dim=0) == 0))
 
             Hpath_t = Hpath[-1].t().matmul(lat_cond_t) - torch.sum(
-                lat_cond_t * torch.log(lat_cond_t + 10 ** -13 * (lat_cond_t == 0)), axis=0)
+                lat_cond_t * torch.log(lat_cond_t + 10 ** -13), axis=0)
 
             lat_cond.append(lat_cond_t)
             Hpath.append(Hpath_t.t())
@@ -220,9 +221,9 @@ class HMMtwobox:
         # lat_ent = np.sum(Hpath[:, -1] * alpha_scaled[:, -1]) - np.sum(
         #     alpha_scaled[:, -1] * np.log(alpha_scaled[:, -1] + 10 ** -13 * (alpha_scaled[:, -1] == 0)))
         lat_ent = torch.sum(Hpath[:, -1] * alpha_scaled[:, -1]) - torch.sum(
-            alpha_scaled[:, -1] * torch.log(alpha_scaled[:, -1] + 10 ** -13 * (alpha_scaled[:, -1] == 0)))
+            alpha_scaled[:, -1] * torch.log(alpha_scaled[:, -1] + 10 ** -13 ))
 
-
+        #return Hpath[10,5]
         return lat_ent
 
     def log_likelihood(self, obs, Anew, Bnew):
@@ -261,13 +262,20 @@ class HMMtwobox:
 
         for t in range(T - 1):
             Qaux2 += torch.sum(torch.log(Anew[act[t]][torch.meshgrid(self._states(rew[t],loc[t]), self._states(rew[t + 1],loc[t+1]))] +
-                                    10 ** -13 * (Anew[act[t]][torch.meshgrid(self._states(rew[t], loc[t]), self._states(rew[t + 1], loc[t+1]))] == 0))
-                             * xi[t])
+                                    10 ** -13) * xi[t])
+
+            # Qaux2 += torch.sum(torch.log(
+            #     Anew[act[t]][torch.meshgrid(self._states(rew[t], loc[t]), self._states(rew[t + 1], loc[t + 1]))] +
+            #     10 ** -13 * (Anew[act[t]][torch.meshgrid(self._states(rew[t], loc[t]),
+            #                                              self._states(rew[t + 1], loc[t + 1]))] == 0))
+            #                    * xi[t])
 
 
         for t in range(T):
-            Qaux3 += torch.sum(torch.log(Bnew[act[t], self._states(rew[t], loc[t])] +
-                                    10 ** -13 * ( Bnew[act[t], self._states(rew[t], loc[t])] == 0)) * gamma[:, t])
+            Qaux3 += torch.sum(torch.log(Bnew[act[t], self._states(rew[t], loc[t])] +10 ** -13) * gamma[:, t])
+
+            # Qaux3 += torch.sum(torch.log(Bnew[act[t], self._states(rew[t], loc[t])] +
+            #                              10 ** -13 * (Bnew[act[t], self._states(rew[t], loc[t])] == 0)) * gamma[:, t])
 
 
 
@@ -300,42 +308,42 @@ class HMMtwobox:
 
         return Qaux
 
-    def computeQauxDE(self, obs, Anew, Bnew, Anewde, Bnewde):
-
-        T = obs.shape[0]  # length of a sample sequence
-
-        act = obs[:, 0]  # 0: doing nothing; 1: press button
-        rew = obs[:, 1]  # 0 : not have; 1: have
-        loc = obs[:, 2]  # location, three possible values
-
-        # alpha = self.forward(obs)
-        # beta = self.backward(obs)
-        alpha, scale = self.forward_scale(obs)
-        beta = self.backward_scale(obs, scale)
-
-        gamma = self.compute_gamma(alpha, beta)
-        xi = self.compute_xi(alpha, beta, obs)
-        dQaux1 = np.sum(np.log(self.latent_ini) * gamma[:, 0])
-        dQaux2 = 0
-        dQaux3 = 0
-
-        for t in range(T - 1):
-            # Qaux2 += np.sum(np.log(10 ** -13 + Anew[act[t]][
-            #   np.ix_(self._states(rew[t]), self._states(rew[t + 1]))]) * xi[t, :, :])
-
-            Aelement = Anew[act[t]][np.ix_(self._states(rew[t],loc[t]), self._states(rew[t + 1],loc[t+1]))]
-            Aelement_prime = Aelement + 1 * (Aelement == 0)
-            dQaux2_ins = Anewde[act[t]][np.ix_(self._states(rew[t],loc[t]), self._states(rew[t + 1],loc[t+1]))
-                         ] / (Aelement_prime) * (Aelement != 0) * xi[t, :, :]
-            dQaux2 += np.sum(dQaux2_ins)
-
-
-            Belement = Bnew[act[t], self._states(rew[t], loc[t])]
-            Belement_prime = Belement + 1 * (Belement == 0)
-            dQaux3_ins = Bnewde[act[t], self._states(rew[t], loc[t])] / Belement_prime * \
-                         (Belement != 0) * gamma[:, t]
-            dQaux3 += np.sum(dQaux3_ins)
-
-            dQaux = dQaux1 + dQaux2 + dQaux3
-
-        return dQaux
+    # def computeQauxDE(self, obs, Anew, Bnew, Anewde, Bnewde):
+    #
+    #     T = obs.shape[0]  # length of a sample sequence
+    #
+    #     act = obs[:, 0]  # 0: doing nothing; 1: press button
+    #     rew = obs[:, 1]  # 0 : not have; 1: have
+    #     loc = obs[:, 2]  # location, three possible values
+    #
+    #     # alpha = self.forward(obs)
+    #     # beta = self.backward(obs)
+    #     alpha, scale = self.forward_scale(obs)
+    #     beta = self.backward_scale(obs, scale)
+    #
+    #     gamma = self.compute_gamma(alpha, beta)
+    #     xi = self.compute_xi(alpha, beta, obs)
+    #     dQaux1 = np.sum(np.log(self.latent_ini) * gamma[:, 0])
+    #     dQaux2 = 0
+    #     dQaux3 = 0
+    #
+    #     for t in range(T - 1):
+    #         # Qaux2 += np.sum(np.log(10 ** -13 + Anew[act[t]][
+    #         #   np.ix_(self._states(rew[t]), self._states(rew[t + 1]))]) * xi[t, :, :])
+    #
+    #         Aelement = Anew[act[t]][np.ix_(self._states(rew[t],loc[t]), self._states(rew[t + 1],loc[t+1]))]
+    #         Aelement_prime = Aelement + 1 * (Aelement == 0)
+    #         dQaux2_ins = Anewde[act[t]][np.ix_(self._states(rew[t],loc[t]), self._states(rew[t + 1],loc[t+1]))
+    #                      ] / (Aelement_prime) * (Aelement != 0) * xi[t, :, :]
+    #         dQaux2 += np.sum(dQaux2_ins)
+    #
+    #
+    #         Belement = Bnew[act[t], self._states(rew[t], loc[t])]
+    #         Belement_prime = Belement + 1 * (Belement == 0)
+    #         dQaux3_ins = Bnewde[act[t], self._states(rew[t], loc[t])] / Belement_prime * \
+    #                      (Belement != 0) * gamma[:, t]
+    #         dQaux3 += np.sum(dQaux3_ins)
+    #
+    #         dQaux = dQaux1 + dQaux2 + dQaux3
+    #
+    #     return dQaux

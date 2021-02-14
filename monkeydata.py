@@ -1,9 +1,10 @@
 from twoboxTask.twobox_IRC_torch import *
 import scipy.io as sio
 
+pre_processed = True
 
 # pre-process data
-if True:
+if not pre_processed:
     """
     import data
     """
@@ -88,7 +89,9 @@ if True:
 
 
     rewDelBins = mergeArrays(rew1DelBins, rew2DelBins)
-    rewDel_subsess = [rewDelBins[0:34], rewDelBins[34:100],rewDelBins[100:134],rewDelBins[134:]]
+    rewDel_subsess = [rewDelBins[0:34], rewDelBins[34:100],
+                      rewDelBins[100:134],rewDelBins[134:]] #rew_del with different schedules
+
 
     b1PushedBins_subsess = [[], [], [], []]
     b2PushedBins_subsess = [[], [], [], []]
@@ -336,70 +339,81 @@ if True:
     ax2.set_xlabel('time')
     plt.show()
 
-"""
-stack inforamtion from one session
-combine differnet time frames, padded with zero inbetween
-"""
-# actTT = np.hstack((actT[range(bin_idx_range[0][0], bin_idx_range[0][1]+1)], 0,
-#                               actT[range(bin_idx_range[1][0], bin_idx_range[1][1]+1)]))
-# rewTT = np.hstack((rewT[range(bin_idx_range[0][0], bin_idx_range[0][1]+1)], 0,
-#                              rewT[range(bin_idx_range[1][0], bin_idx_range[1][1]+1)]))
-# locTT = np.hstack((locT[range(bin_idx_range[0][0], bin_idx_range[0][1]+1)], 0,
-#                              locT[range(bin_idx_range[1][0], bin_idx_range[1][1]+1)]))
+else:
+    path = os.getcwd()
+    dataN_pkl_file = open(path + '/twoboxTask/Data/monkey_twobox_preprocessed.pkl', 'rb')
+    dataN_pkl = pickle.load(dataN_pkl_file)
+    dataN_pkl_file.close()
 
-# actTT = np.hstack((actT[bin_idx2]))
-# rewTT = np.hstack((rewT[bin_idx2]))
-# locTT = np.hstack((locT[bin_idx2]))
+    actT = dataN_pkl['actions']
+    rewT = dataN_pkl['rewards']
+    locT = dataN_pkl['locations']
+    bin_idx_range = dataN_pkl['bin_idx_range']
 
-actTT = np.hstack((actT[range(17000, bin_idx_range[0][1])]))
-rewTT = np.hstack((rewT[range(17000, bin_idx_range[0][1])]))
-locTT = np.hstack((locT[range(17000, bin_idx_range[0][1])]))
-
+actTT = np.hstack((actT[range(bin_idx_range[1][0], 48000)]))
+rewTT = np.hstack((rewT[range(bin_idx_range[1][0], 48000)]))
+locTT = np.hstack((locT[range(bin_idx_range[1][0], 48000)]))
 obsTT = (np.vstack([actTT, rewTT, locTT]).T)
-obsTT = torch.from_numpy(obsTT)  # from numpy to torch
 
 T = obsTT.shape[0]
 obs = obsTT[:T, :]
+act = obs[:, 0]
+rew = obs[:, 1]
+loc = obs[:, 2]
 
+obsN = np.expand_dims(obs, axis=0)
 """
 IRC
 """
-nq = 5
+nq = 10
 nr = 2
 nl = 3
 na = 5
-discount = 0.99
+discount = torch.tensor([.99], dtype=torch.float64)
 
 sample_length = len(obs)
 sample_number = 1
 
-app_rate1_ini = 0.0342 #0.10385418
-disapp_rate1_ini = 0.0187 #.01
-app_rate2_ini = 0.0356 #0.19612859
-disapp_rate2_ini =  0.0028 #.01
-food_missed_ini = 0.1085 #.1  # 0
-food_consumed_ini = 0.8391 #.9  # 1
-belief_diffusion_ini = 0.0325 #.1 #0.03827322 # .1
-policy_temperature_ini = 0.0792 #.06  #0.15768841  # .06
-push_button_cost_ini = 0.3566 #.2 #0.40363519  # .2
-grooming_reward_ini = -0.0052 #.3 #0.20094441  # .3
-travel_cost_ini = 0.3523 #.1 #0.3033027  # .1
-trip_prob_ini = 0.0447 #.05
-direct_prob_ini = 0.2186 #0.19538837  # .1
+# app_rate1_ini = 0.0342 #0.10385418
+# disapp_rate1_ini = 0.0187 #.01
+# app_rate2_ini = 0.0356 #0.19612859
+# disapp_rate2_ini =  0.0028 #.01
+# food_missed_ini = 0.1085 #.1  # 0
+# food_consumed_ini = 0.8391 #.9  # 1
+# belief_diffusion_ini = 0.0325 #.1 #0.03827322 # .1
+# policy_temperature_ini = 0.0792 #.06  #0.15768841  # .06
+# push_button_cost_ini = 0.3566 #.2 #0.40363519  # .2
+# grooming_reward_ini = -0.0052 #.3 #0.20094441  # .3
+# travel_cost_ini = 0.3523 #.1 #0.3033027  # .1
+# trip_prob_ini = 0.0447 #.05
+# direct_prob_ini = 0.2186 #0.19538837  # .1
+app_rate1_ini = 0.0577
+disapp_rate1_ini = .0232
+app_rate2_ini = 0.0859
+disapp_rate2_ini = .0182
+food_missed_ini = .1193  # 0
+food_consumed_ini = .9331  # 1
+belief_diffusion_ini = .1380  # 0.03827322 # .1
+policy_temperature_ini = .2034  # 0.15768841  # .06
+push_button_cost_ini = .3244  # 0.40363519  # .2
+grooming_reward_ini = .0130  # 0.20094441  # .3
+travel_cost_ini = .3951  # 0.3033027  # .1
+trip_prob_ini = .0453
+direct_prob_ini = 0.1954  # .1
 
-app_rate1_ini = torch.autograd.Variable(torch.tensor([app_rate1_ini]), requires_grad=True)
-disapp_rate1_ini = torch.autograd.Variable(torch.tensor([disapp_rate1_ini]), requires_grad=True)
-app_rate2_ini = torch.autograd.Variable(torch.tensor([app_rate2_ini]), requires_grad=True)
-disapp_rate2_ini = torch.autograd.Variable(torch.tensor([disapp_rate2_ini]), requires_grad=True)
-food_missed_ini = torch.autograd.Variable(torch.tensor([food_missed_ini]), requires_grad=True)  # 0
-food_consumed_ini = torch.autograd.Variable(torch.tensor([food_consumed_ini]), requires_grad=True)  # .99 #1
-belief_diffusion_ini = torch.autograd.Variable(torch.tensor([belief_diffusion_ini]), requires_grad=True)  # .1
-policy_temperature_ini = torch.autograd.Variable(torch.tensor([policy_temperature_ini]), requires_grad=True)  # .061
-push_button_cost_ini = torch.autograd.Variable(torch.tensor([push_button_cost_ini]), requires_grad=True)  # .3
-grooming_reward_ini = torch.autograd.Variable(torch.tensor([grooming_reward_ini]), requires_grad=True)  # .3
-travel_cost_ini = torch.autograd.Variable(torch.tensor([travel_cost_ini]), requires_grad=True)  # .3
-direct_prob_ini = torch.autograd.Variable(torch.tensor([direct_prob_ini]), requires_grad=True)  # .3
-trip_prob_ini = torch.autograd.Variable(torch.tensor([trip_prob_ini]), requires_grad=True)  # .3
+app_rate1_ini = torch.autograd.Variable(torch.tensor([app_rate1_ini], dtype=torch.float64), requires_grad=True)
+disapp_rate1_ini = torch.autograd.Variable(torch.tensor([disapp_rate1_ini], dtype=torch.float64), requires_grad=True)
+app_rate2_ini = torch.autograd.Variable(torch.tensor([app_rate2_ini], dtype=torch.float64), requires_grad=True)
+disapp_rate2_ini = torch.autograd.Variable(torch.tensor([disapp_rate2_ini], dtype=torch.float64), requires_grad=True)
+food_missed_ini = torch.autograd.Variable(torch.tensor([food_missed_ini], dtype=torch.float64), requires_grad=True)  # 0
+food_consumed_ini = torch.autograd.Variable(torch.tensor([food_consumed_ini], dtype=torch.float64), requires_grad=True)  # .99 #1
+belief_diffusion_ini = torch.autograd.Variable(torch.tensor([belief_diffusion_ini], dtype=torch.float64), requires_grad=True)  # .1
+policy_temperature_ini = torch.autograd.Variable(torch.tensor([policy_temperature_ini], dtype=torch.float64), requires_grad=True)  # .061
+push_button_cost_ini = torch.autograd.Variable(torch.tensor([push_button_cost_ini],dtype=torch.float64),  requires_grad=True)  # .3
+grooming_reward_ini = torch.autograd.Variable(torch.tensor([grooming_reward_ini],dtype=torch.float64), requires_grad=True)  # .3
+travel_cost_ini = torch.autograd.Variable(torch.tensor([travel_cost_ini], dtype=torch.float64), requires_grad=True)  # .3
+direct_prob_ini = torch.autograd.Variable(torch.tensor([direct_prob_ini],dtype=torch.float64),  requires_grad=True)  # .3
+trip_prob_ini = torch.autograd.Variable(torch.tensor([trip_prob_ini], dtype=torch.float64), requires_grad=True)  # .3
 
 point_ini = collections.OrderedDict()
 point_ini['food_missed'] = food_missed_ini
@@ -416,9 +430,8 @@ point_ini['trip_prob'] = trip_prob_ini
 point_ini['grooming_reward'] = grooming_reward_ini
 point_ini['travel_cost'] = travel_cost_ini
 
-obsN = np.expand_dims(obs, axis=0)
-LR = 10**-6*5
-EPS = 1 #0.1
+LR = 10**-6*1
+EPS = .1 #0.1
 BATCH_SIZE = 1
 
 # point_traj_set = []
@@ -436,6 +449,6 @@ BATCH_SIZE = 1
 
 IRC_monkey = twobox_IRC_torch(discount, nq, nr, na, nl, point_ini)
 IRC_monkey.IRC_batch(obsN[:, :1000, :], lr=LR, eps=EPS, batch_size=BATCH_SIZE, shuffle=True)
-#IRC_monkey.contour_LL(obsN)
-#IRC_monkey.plot_contour_LL()
+IRC_monkey.contour_LL(obsN)
+IRC_monkey.plot_contour_LL()
 print(1)

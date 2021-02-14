@@ -1,5 +1,8 @@
 from twoboxTask.twobox import *
 from twoboxTask.twobox_HMM import *
+import pickle
+import os
+from datetime import datetime
 
 from sklearn.decomposition import PCA
 from sklearn import random_projection
@@ -97,16 +100,36 @@ class twobox_IRC_torch():
                         self.log_likelihood_whole[-1] - self.log_likelihood_whole[-2]) < eps:
                     break
             else:
+
+                if epoch % 10 == 0:
+                    self.save_traj()
+
                 print("epoch: %d, loss: %1.3f" % (epoch + 1, loss))
 
                 if len(self.log_likelihood_traj) >= 2 and torch.abs(
                         self.log_likelihood_traj[-1] - self.log_likelihood_traj[-2]) < eps:
+                    print('IRC Finished')
                     break
 
             if epoch >= 200:
                 break
 
             epoch += 1
+
+    def save_traj(self):
+        datestring_IRC = datetime.strftime(datetime.now(), '%m%d%Y(%H%M)')  # current time used to set file name
+
+        path = os.getcwd()
+        ### write data to file
+        tra_dict = {'point_traj': self.point_traj,
+                     'log_likelihood_traj': self.log_likelihood_traj}
+        #IRC_output = open(path + '/Data/' + datestring_IRC + '_IRC_twobox' + '.pkl', 'wb')
+        #pickle.dump(tra_dict, IRC_output)
+        #IRC_output.close()
+
+        with open(path + '/' + datestring_IRC + '_IRC_twobox' + '.pkl', 'wb') as IRC_output:
+            pickle.dump(tra_dict, IRC_output)
+
 
     def contour_LL(self, obsN, step1 = 0.02, step2 = 0.02, N1 = 6, N2 = 6, proj = 'PCA'):
 

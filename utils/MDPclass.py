@@ -37,7 +37,8 @@ class MDP(object):
         # if the discount is None then the algorithm is assumed to not use it
         # in its computations
         if discount is not None:
-            self.discount = float(discount)
+            #self.discount = float(discount)
+            self.discount = discount
             assert 0.0 < self.discount <= 1.0, "Discount rate must be in ]0; 1]"
             if self.discount == 1:
                 print("WARNING: check conditions of convergence. With no "
